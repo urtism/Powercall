@@ -69,6 +69,71 @@ def panel_check(panel,cfg):
 
 	return design,target_list,target_bed,transcripts_list
 
+def ReadSampleSheet(samplesheet,analysis,panel,step):
+	ssheet = dict()
+	if step == 'Alignment':
+		with open(samplesheet,'r') as ss:
+			for line in ss:
+				line=line.rstrip()
+				if panel == 'CustomHPHS':
+					if analysis == 'Germline' or analysis == 'Somatic':
+						sample_name = line.split('\t')[0]
+						fq1 = line.split('\t')[1]
+						fq2 = line.split('\t')[2]
+						fqI2 = line.split('\t')[3]
+						ssheet[sample_name] = [[sample_name,fq1,fq2,fqI2]]
+
+					elif analysis == 'Somatic_Case_Control':
+						gsample_name = line.split('\t')[0]
+						gfq1 = line.split('\t')[1]
+						gfq2 = line.split('\t')[2]
+						gfqI2 = line.split('\t')[3]
+						ssample_name = line.split('\t')[4]
+						sfq1 = line.split('\t')[5]
+						sfq2 = line.split('\t')[6]
+						sfqI2 = line.split('\t')[7]
+						ssheet[sample_name] = [[gsample_name,gfq1,gfq2,gfqI2],[ssample_name,sfq1,sfq2,sfqI2]]
+				else:
+					if analysis == 'Germline' or analysis == 'Somatic':
+						sample_name = line.split('\t')[0]
+						fq1 = line.split('\t')[1]
+						fq2 = line.split('\t')[2]
+						ssheet[sample_name] = [[sample_name,fq1,fq2]]
+
+					elif analysis == 'Somatic_Case_Control':
+						gsample_name = line.split('\t')[0]
+						gfq1 = line.split('\t')[1]
+						gfq2 = line.split('\t')[2]
+						ssample_name = line.split('\t')[3]
+						sfq1 = line.split('\t')[4]
+						sfq2 = line.split('\t')[5]
+						ssheet[sample_name] = [[gsample_name,gfq1,gfq2],[ssample_name,sfq1,sfq2]]
+	
+	elif step == 'Preprocessing' or step == 'Variantcalling':
+		with open(samplesheet,'r') as ss:
+			for line in ss:
+				line=line.rstrip()
+				if analysis == 'Germline' or analysis == 'Somatic':
+					sample_name = line.split('\t')[0]
+					bam = line.split('\t')[1]
+					ssheet[sample_name] = [[sample_name,bam]]
+
+				elif analysis == 'Somatic_Case_Control':
+					gsample_name = line.split('\t')[0]
+					gbam = line.split('\t')[1]
+					ssample_name = line.split('\t')[2]
+					sbam = line.split('\t')[3]
+					ssheet[sample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
+
+
+	elif step == 'FeaturesExtracion':
+		pass
+
+	elif step == 'Annotation':
+		pass
+			
+	return ssheet
+
 
 def Delete(files):
 	for f in files:

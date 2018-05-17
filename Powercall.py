@@ -10,8 +10,6 @@ import random as r
 import regex as re
 import Pipeline as pipeline
 import Functions as f
-import alignment
-import preprocessing
 
 
 if __name__ == '__main__':
@@ -42,7 +40,8 @@ if __name__ == '__main__':
 	else:
 		cfg = json.loads((open(os.path.dirname(os.path.abspath(__file__)) + '/CFG/Powercall.default.cfg.json').read()).encode('utf8'))
 
-	if opts.workid != None:
+	script_dir = os.path.dirname(os.path.abspath(__file__)) + '/scipts/'
+	if opts.workdir != None:
 		work_dir = opts.workdir
 	else:
 		work_dir = '~/NGS_ANALYSIS/' + opts.run_id
@@ -57,7 +56,6 @@ if __name__ == '__main__':
 	variantcalling_dir = work_dir + '/VARIANTCALLING'
 	featuresextraction_dir = work_dir + '/FEATUREEXTRACTION'
 
-
 	dirs['work'] = work_dir
 	dirs['storage'] = storage_dir
 	dirs['out'] = out_dir
@@ -65,9 +63,10 @@ if __name__ == '__main__':
 	dirs['delete'] = delete_dir
 	dirs['logo'] = logos_dir
 	dirs['alignment'] = align_dir
-	dirs['preprocs'] = preprocessing_dir
+	dirs['preprocessing'] = preprocessing_dir
 	dirs['variantcall'] = variantcalling_dir
 	dirs['featextract'] = featuresextraction_dir
+	dirs['script'] = script_dir
 	
 	f.makedirs([work_dir, work_dir+'/STORAGE', work_dir+'/OUTPUT', storage_dir, out_dir, delete_dir,log_dir])
 
@@ -76,23 +75,24 @@ if __name__ == '__main__':
 	if opts.design != None:
 		design = opts.design
 
+	workflow = opts.workflow
 	if workflow == 'ALL':
 		workflow = 'AMIBVFE'
 
-	if design == Amplicon:
+	if design == 'Amplicon':
 		workflow=re.sub('MIB','',workflow)
 
 	if opts.analysis == 'Germline':
-		pipeline.Pipeline_Germline_Multisample(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,samplesheet,target_list,target_bed,transcripts_list)
+		pipeline.Pipeline_Germline_Multisample(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list)
 
 	if opts.analysis == 'GermlineSS':
-		pipeline.Pipeline_Germline_Singlesample(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,samplesheet,target_list,target_bed,transcripts_list)
+		pipeline.Pipeline_Germline_Singlesample(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list)
 
 	elif opts.analysis == 'SomaticCC':
-		pipeline.Pipeline_Somatic_Case_Control(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,samplesheet,target_list,target_bed,transcripts_list)
+		pipeline.Pipeline_Somatic_Case_Control(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list)
 
 	elif opts.analysis == 'Somatic':
-		pipeline.Pipeline_Somatic(workflow,opts.samplesheet,design,dirs,opts.panel,cfg,opts,samplesheet,target_list,target_bed,transcripts_list)
+		pipeline.Pipeline_Somatic(workflow,opts.samplesheet,design,dirs,opts.panel,cfg,opts,target_list,target_bed,transcripts_list)
 
 
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
