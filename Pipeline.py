@@ -55,6 +55,7 @@ def Preprocessing(panel,workflow,target_list,sample_name,bam,dirs,cfg,opts,log,w
 
 		ARRG_bam = tools.AddOrReplaceReadGroups(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],bam,sample_name,panel,opts.run_id,log,workdir)
 		tools.BuildBamIndex(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],ARRG_bam,log)
+		f.Move([bam,bam+'.bai'],dirs['delete'])
 		bam = ARRG_bam
 
 	if 'M' in workflow:
@@ -62,7 +63,7 @@ def Preprocessing(panel,workflow,target_list,sample_name,bam,dirs,cfg,opts,log,w
 		MD_bam = tools.MarkDuplicates(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],bam,log,workdir)
 		tools.BuildBamIndex(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],MD_bam,log)
 		#f.Delete([sam,bam])
-		f.Move([bam],dirs['delete'])
+		f.Move([bam,bam+'.bai'],dirs['delete'])
 		bam = MD_bam
 
 	if 'I' in workflow:
@@ -70,17 +71,17 @@ def Preprocessing(panel,workflow,target_list,sample_name,bam,dirs,cfg,opts,log,w
 		IR_bam = tools.IndelRealigner(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],bam,cfg['reference']['FASTA'],cfg['database']['MILLS'],target_list,log,workdir)
 		tools.BuildBamIndex(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],IR_bam,log)
 		#f.Delete([sam,bam])
-		f.Move([bam],dirs['delete'])
+		f.Move([bam,bam+'.bai'],dirs['delete'])
 		bam = IR_bam
 
 	if 'B' in workflow:
 
 		BR_bam = tools.BaseRecalibrator(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],bam,cfg['reference']['FASTA'],cfg['database']['DBSNP'],cfg['database']['MILLS'],target_list,log,workdir)
 		#f.Delete([sam,bam])
-		f.Move([bam],dirs['delete'])
+		f.Move([bam,bam+'.bai'],dirs['delete'])
 		bam = BR_bam
 
-	tools.BuildBamIndex((cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],bam,log))
+	tools.BuildBamIndex(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],bam,log)
 
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	print 'Sample: '+sample_name+ ' -> Done in: %d min, %d sec' % elapsed_time
@@ -170,26 +171,25 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 		name = opts.run_id
 
-		gatk_vcf = tools.GenotypeGVCFs(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],name,gvcf_list,cfg['reference']['FASTA'],variantcalling_log,workdir)
-		gatk_vcf = tools.header_fix(dirs['script']+'merge_vcf.py',gatk_vcf,'G',variantcalling_log)
-		gatk_vcf = tools.vcf_norm(cfg['tools']['BEDTOOLS']['path'],gatk_vcf,cfg['reference']['FASTA'],variantcalling_log)
+		gatk_vcf = tools.GenotypeGVCFs(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],name,gvcf_list,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
+		gatk_vcf = tools.header_fix(dirs['script']+'header_fix.py',gatk_vcf,'G',variantcalling_log)
+		gatk_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],gatk_vcf,cfg['reference']['FASTA'],variantcalling_log)
 		
 		freeb_vcf = tools.FreeBayes(cfg['variantcaller']['FREEBAYES']['path'],name,None,bam_list,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
-		freeb_vcf = tools.header_fix(dirs['script']+'merge_vcf.py',freeb_vcf,'F',variantcalling_log)
-		freeb_vcf = tools.vcf_norm(cfg['tools']['BEDTOOLS']['path'],freeb_vcf,cfg['reference']['FASTA'],variantcalling_log)
+		freeb_vcf = tools.header_fix(dirs['script']+'header_fix.py',freeb_vcf,'F',variantcalling_log)
+		freeb_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],freeb_vcf,cfg['reference']['FASTA'],variantcalling_log)
 		
-		mpileup = tools.mpileup(name,cfg['reference']['FASTA'],None,None,bam_list,target_list,variantcalling_log,workdir)
-		varscan_snp_vcf = tools.VarScan_mpileup2snp(cfg['variantcaller']['VARSCAN']['path'],cfg['variantcaller']['VARSCAN']['ram'],mpileup,sample_list,cfg['reference']['FASTA'],variantcalling_log,workdir)
-		varscan_indel_vcf = tools.VarScan_mpileup2indel(cfg['variantcaller']['VARSCAN']['path'],cfg['variantcaller']['VARSCAN']['ram'],mpileup,sample_list,cfg['reference']['FASTA'],variantcalling_log,workdir)
+		mpileup = tools.mpileup(name,cfg['reference']['FASTA'],None,None,bam_list,target_bed,variantcalling_log,workdir)
+		varscan_snp_vcf = tools.VarScan_mpileup2snp(cfg['variantcaller']['VARSCAN']['path'],cfg['variantcaller']['VARSCAN']['ram'],mpileup,sample_list,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
+		varscan_indel_vcf = tools.VarScan_mpileup2indel(cfg['variantcaller']['VARSCAN']['path'],cfg['variantcaller']['VARSCAN']['ram'],mpileup,sample_list,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
 		varscan_vcf = tools.Concat_VarScan_vcf(varscan_snp_vcf,varscan_indel_vcf,variantcalling_log)
-		varscan_vcf = tools.header_fix(dirs['script']+'merge_vcf.py',varscan_vcf,'V',variantcalling_log)
-		varscan_vcf = tools.vcf_norm(cfg['tools']['BEDTOOLS']['path'],varscan_vcf,cfg['reference']['FASTA'],variantcalling_log)
-
+		varscan_vcf = tools.header_fix(dirs['script']+'header_fix.py',varscan_vcf,'V',variantcalling_log)
+		varscan_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],varscan_vcf,cfg['reference']['FASTA'],variantcalling_log)
 		merge_vcf = tools.merge_vcf(dirs['script']+'merge_vcf.py',name,gatk_vcf,freeb_vcf,varscan_vcf,variantcalling_log,workdir)
 
-		new_samplesheet.write('\t',join([gatk_vcf,freeb_vcf,varscan_vcf]))
+		new_samplesheet.write('\t'.join([gatk_vcf,freeb_vcf,varscan_vcf]))
 		new_samplesheet.write(merge_vcf)
-		preprocessing_log.close()
+		variantcalling_log.close()
 		new_samplesheet.close()
 
 	if 'F' in workflow:

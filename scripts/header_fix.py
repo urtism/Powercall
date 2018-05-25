@@ -45,7 +45,10 @@ for line in read:
 				pass
 
 	elif opts.variantcaller == 'V':
-	
+		
+		if line.startswith('##fileformat=VCFv4.1'):
+			line="##fileformat=VCFv4.2"
+
 		if line.startswith('chr'):
 			riga=line.split('\t')
 			ref=riga[3]

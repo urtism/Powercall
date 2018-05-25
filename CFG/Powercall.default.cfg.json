@@ -25,6 +25,9 @@
 },
 "BCFTOOLS":{
 "path":"bcftools"
+},
+"BEDTOOLS":{
+"path":"bedtools"
 }
 },
 "annotation":{

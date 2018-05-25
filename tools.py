@@ -101,7 +101,7 @@ def AddOrReplaceReadGroups(path,ram,bam,sample_name,panel,run,log,workdir):
 
 def BuildBamIndex(path,ram,bam,log):
 
-	print '- Bam indexing'
+	#print '- Bam indexing'
 	bai= bam+'.bai'
 	if os.path.exists(bai):
 		status = subprocess.call("rm "+ bai , shell=True)
@@ -118,7 +118,7 @@ def MarkDuplicates(path,ram,bam,log,workdir):
 
 	print "- Marking duplicates"
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['Mark'] +['bam'])
-	metrics_file = '.'.join(bam.split('/')[-1].split('.')[:-1] + ['MarkMetrics'] +['txt'])
+	metrics_file = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['MarkMetrics'] +['txt'])
 	args = ['java','-Xmx'+ram,'-jar',path,'MarkDuplicates','I='+bam,'O='+outbam,'METRICS_FILE='+metrics_file,'READ_NAME_REGEX=null','ASSUME_SORTED=true','VALIDATION_STRINGENCY=LENIENT']
 	success = subprocess.call(args,stdout=log,stderr=log)
 
@@ -131,8 +131,8 @@ def MarkDuplicates(path,ram,bam,log,workdir):
 def IndelRealigner(path,ram,bam,reference,mills,target,log,workdir):
 
 	print "- Indel realignment"
-	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['Mark'] +['bam'])
-	intervals = '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IndelRealigner'] +['intervals'])
+	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IR'] +['bam'])
+	intervals = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IndelRealigner'] +['intervals'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-T','RealignerTargetCreator','-R',reference,'-I', bam,'-o',intervals,'-known',mills,'-L',target]
 	success = subprocess.call(args,stdout=log,stderr=log)
 
@@ -181,9 +181,9 @@ def BaseRecalibrator(path,ram,bam,reference,dbsnp,mills,target,log,workdir):
 def mpileup(name,reference,sbam,gbam,bam_list,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- Mpileup"
+	#print "- Mpileup"
 	mpileup = workdir +'/'+name+'.mpileup'
-
+	open_mpileup = open(mpileup,'w')
 	if sbam != None:
 		args = ['samtools','mpileup','-B','-q 1','-d','50000','-L','50000','-f',reference,gbam,sbam]
 	elif gbam != None:
@@ -194,11 +194,12 @@ def mpileup(name,reference,sbam,gbam,bam_list,target,log,workdir):
 	if target != None:
 		args += ['-l',target]
 
-	success = subprocess.call(args,stdout=mpileup,stderr=log)
+	success = subprocess.call(args,stdout=open_mpileup,stderr=log)
+	#success= 0
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-
+	open_mpileup.close()
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- Mpileup: %d min, %d sec" % elapsed_time
 		return mpileup
 	else:
 		f.prRed('Error in Mpileup. Check log file.')
@@ -218,6 +219,7 @@ def HaplotypeCaller(path,ram,bam,sample_name,reference,target,log,workdir):
 		args += ['-L',target]
 
 	success = subprocess.call(args,stdout=log,stderr=log)
+	#success = 0
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
@@ -227,10 +229,10 @@ def HaplotypeCaller(path,ram,bam,sample_name,reference,target,log,workdir):
 		f.prRed('Error in gvcf generation: '+ sample_name+'. Check log file.')
 		exit(1)
 
-def GenotypeGVCFs(path,ram,name,gvcf_list,reference,log,workdir):
+def GenotypeGVCFs(path,ram,name,gvcf_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- GenotypeGVCFs"
+	#print "- GenotypeGVCFs"
 	vcf = workdir + '/' + name + '.GATK.vcf'
 	args = ['java','-Xmx'+ram,'-jar',path,'-T','GenotypeGVCFs','-R',reference,'-V:VCF', gvcf_list,'-o',vcf]
 
@@ -241,7 +243,7 @@ def GenotypeGVCFs(path,ram,name,gvcf_list,reference,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- GenotypeGVCFs: %d min, %d sec" % elapsed_time
 		return vcf
 	else:
 		f.prRed('Error in GenotypeGVCFs. Check log file.')
@@ -252,7 +254,7 @@ def GenotypeGVCFs(path,ram,name,gvcf_list,reference,log,workdir):
 def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- Mutect2"
+	#print "- Mutect2"
 	vcf = workdir + '/' + name + '.Mutect.vcf'
 	
 	if gbam == None:
@@ -270,7 +272,7 @@ def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- Mutect2: %d min, %d sec" % elapsed_time
 		return vcf
 	else:
 		f.prRed('Error in Mutect2. Check log file.')
@@ -281,9 +283,9 @@ def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,log,workdir):
 def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- FreeBayes"
+	#print "- FreeBayes"
 	vcf = workdir + '/' + name + '.FreeBayes.vcf'
-	if bam != None:
+	if bam == None:
 		args = [path,'-f',reference,'-L', bam_list,'-v',vcf,
 			'--pooled-discrete','--pooled-continuous','--genotype-qualities','--report-genotype-likelihood-max','--allele-balance-priors-off']	
 
@@ -298,7 +300,7 @@ def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- FreeBayes: %d min, %d sec" % elapsed_time
 		return vcf
 	else:
 		f.prRed('Error in FreeBayes calling. Check log file.')
@@ -306,81 +308,76 @@ def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     VARSCAN     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-def VarScan_mpileup2snp(path,ram,mpileup,sample_list,reference,log,workdir):
+def VarScan_mpileup2snp(path,ram,mpileup,sample_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- VarScan mpileup2snp"
+	#print "- VarScan mpileup2snp"
 	vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan.snp.vcf'])
-	args = ['java','-Xmx'+ram,'-jar',path,'mpileup2snp',mpileup,'--vcf-sample-list',sample_list,'--output-vcf 1','--strand-filter 0']
+	open_vcf = open(vcf,'w')
+	args = ['java','-Xmx'+ram,'-jar',path,'mpileup2snp',mpileup,'--vcf-sample-list',sample_list,'--output-vcf','1','--strand-filter 0']
 
 	if target != None:
 		args += ['-L',target]
 
-	if filters == '0':
-		args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
+	#if filters == '0':
+		#args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
 
-	success = subprocess.call(args,stdout=vcf,stderr=log)
+	success = subprocess.call(args,stdout=open_vcf,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-
-	args=['sed','-i','-e','s/fileformat=VCFv4.1/fileformat=VCFv4.2/g',vcf]
-	status = subprocess.call(args, shell=True)
+	open_vcf.close()
 	
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- VarScan mpileup2snp: %d min, %d sec" % elapsed_time
 		return vcf
 	else:
 		f.prRed('Error in VarScan mpileup2snp. Check log file.')
 		exit(1)
 
-def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,log,workdir):
+def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- VarScan mpileup2indel"
-	vcf = workdir + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan.indel.vcf'])
-	args = ['java','-Xmx'+ram,'-jar',path,'mpileup2indel',mpileup,'--vcf-sample-list',sample_list,'--output-vcf 1','--strand-filter 0']
+	#print "- VarScan mpileup2indel"
+	vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan.indel.vcf'])
+	open_vcf = open(vcf,'w')
+	args = ['java','-Xmx'+ram,'-jar',path,'mpileup2indel',mpileup,'--vcf-sample-list',sample_list,'--output-vcf','1','--strand-filter 0']
 
 	if target != None:
 		args += ['-L',target]
 
-	if filters == '0':
-		args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
+	#if filters == '0':
+		#args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
 
-	success = subprocess.call(args,stdout=vcf,stderr=log)
+	success = subprocess.call(args,stdout=open_vcf,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-
-	args=['sed','-i','-e','s/fileformat=VCFv4.1/fileformat=VCFv4.2/g',vcf]
-	status = subprocess.call(args, shell=True)
+	open_vcf.close()
 	
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- VarScan mpileup2indel: %d min, %d sec" % elapsed_time
 		return vcf
 	else:
 		f.prRed('Error in VarScan mpileup2indel. Check log file.')
 		exit(1)
 
-def VarScan_somatic(path,ram,mpileup,sample_list,reference,log,workdir):
+def VarScan_somatic(path,ram,mpileup,sample_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- VarScan mpileup2indel"
-	vcf = workdir + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan'])
+	#print "- VarScan mpileup2indel"
+	vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan'])
 	snp = vcf+'.snp.vcf'
 	indel = svcf+'.indel.vcf'
-	args = ['java','-Xmx'+ram,'-jar',path,'somatic',mpileup,sample_list,'--output-vcf 1','--strand-filter 0','--mpileup 1']
+	args = ['java','-Xmx'+ram,'-jar',path,'somatic',mpileup,sample_list,'--output-vcf','1','--strand-filter 0','--mpileup 1']
 
 	if target != None:
 		args += ['-L',target]
 
-	if filters == '0':
-		args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
+	#if filters == '0':
+		#args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
 
 	success = subprocess.call(args,stdout=log,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-
-	args=['sed','-i','-e','s/fileformat=VCFv4.1/fileformat=VCFv4.2/g',vcf]
-	status = subprocess.call(args, shell=True)
 	
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- VarScan mpileup2indel: %d min, %d sec" % elapsed_time
 		return snp,indel
 	else:
 		f.prRed('Error in VarScan mpileup2indel. Check log file.')
@@ -389,19 +386,22 @@ def VarScan_somatic(path,ram,mpileup,sample_list,reference,log,workdir):
 def Concat_VarScan_vcf(snp,indel,log):
 
 	concat = '.'.join(snp.split('.')[:-2] + ['merge.vcf'])
+	open_concat = open(concat,'w')
 	sort = '.'.join(concat.split('.')[:-1] + ['sort.vcf'])
+	open_sort = open(sort,'w')
 
-	status = subprocess.call(['bgzip',snp], shell=True)
-	status = subprocess.call(['tabix',snp+'.gz'], shell=True)
+	args = ['bgzip',snp]
+	status = subprocess.call('bgzip -f'+snp, shell=True)
+	status = subprocess.call('tabix -f '+snp+'.gz', shell=True)
 
-	status = subprocess.call(['bgzip',indel], shell=True)
-	status = subprocess.call(['tabix',indel+'.gz'], shell=True)
-
+	status = subprocess.call('bgzip -f'+indel, shell=True)
+	status = subprocess.call('tabix -f '+indel+'.gz', shell=True)
+	
 	args = ['vcf-concat',snp+'.gz',indel+'.gz']
-	success1 = subprocess.call(args,stdout=concat,stderr=log)
+	success1 = subprocess.call(args,stdout=open_concat,stderr=log)
 
 	args = ['vcf-sort','-c',concat]
-	success2 = subprocess.call(args,stdout=sort,stderr=log)
+	success2 = subprocess.call(args,stdout=open_sort,stderr=log)
 
 	if success1 or success2:
 		f.prRed('Error in VarScan concat. Check log file.')
@@ -415,8 +415,9 @@ def Concat_VarScan_vcf(snp,indel,log):
 def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,design,reference,log,workdir):
 
 	start_time = datetime.datetime.now()
-	print "- VarDict"
+	#print "- VarDict"
 	vcf =  workdir + '/' + name + '.Vardict.vcf'
+	open_vcf = open(vcf,'w')
 
 	if sbam == None:
 		args = [path,'-G',reference,'-f 0.05','-N',gsample_name,'-b',gbam]
@@ -434,11 +435,11 @@ def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,design,
 			args += ['-z 1','-F 0','-c 1','-S 2','-E 3','-g 4',target]
 		args += ['|',path_script+'/testsomatic.R','|',path_script+'/var2vcf_somatic.pl','-f 0.01','-N','"'+ssample_name+'|'+gsample_name+'"']
 
-	success = subprocess.call(args,stdout=vcf,stderr=log)
+	success = subprocess.call(args,stdout=open_vcf,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-	
+	open_vcf.close()
 	if not success:
-		print "DONE: %d min, %d sec" % elapsed_time
+		print "- VarDict: %d min, %d sec" % elapsed_time
 		return vcf
 	else:
 		f.prRed('Error in VarDict. Check log file.')
@@ -485,7 +486,7 @@ def Vep(path,fork,reference,transcript_list,vep_af,vep_plugins,vcf,log,workdir):
 	if transcript_list == "most_severe":
 		args += ['--most_severe']
 	
-	success = subprocess.call(args,stdout=vep_vcf,stderr=log)
+	success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
 		return vep_vcf
@@ -509,11 +510,11 @@ def vep_plugins(vep_plugins):
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     TOOLS     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 def header_fix(path,vcf,variantcaller,log):
-
 	fix_vcf = '.'.join(vcf.split('.')[:-1] + ['hfix.vcf'])
+	open_fix_vcf = open(fix_vcf,'w')
 	args = ['python',path,'-v',variantcaller,'-f',vcf]
-	success = subprocess.call(args,stdout=fix_vcf,stderr=log)
-
+	success = subprocess.call(args,stdout=open_fix_vcf,stderr=log)
+	open_fix_vcf.close()
 	if not success:
 		return fix_vcf
 	else:
@@ -521,11 +522,11 @@ def header_fix(path,vcf,variantcaller,log):
 		exit(1)
 
 def vcf_norm(path,vcf,reference,log):
-
 	norm_vcf = '.'.join(vcf.split('.')[:-1] + ['norm.vcf'])
-	args = [path,'norm','-m','both','-f',reference,vcf]
-	success = subprocess.call(args,stdout=norm_vcf,stderr=log)
-
+	open_norm_vcf = open(norm_vcf,'w')
+	args = [path,'norm','-m','-both','-f',reference,vcf]
+	success = subprocess.call(args,stdout=open_norm_vcf,stderr=log)
+	open_norm_vcf.close()
 	if not success:
 		return norm_vcf
 	else:

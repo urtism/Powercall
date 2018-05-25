@@ -40,7 +40,7 @@ if __name__ == '__main__':
 	else:
 		cfg = json.loads((open(os.path.dirname(os.path.abspath(__file__)) + '/CFG/Powercall.default.cfg.json').read()).encode('utf8'))
 
-	script_dir = os.path.dirname(os.path.abspath(__file__)) + '/scipts/'
+	script_dir = os.path.dirname(os.path.abspath(__file__)) + '/scripts/'
 	if opts.workdir != None:
 		work_dir = opts.workdir
 	else:
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 	dirs['logo'] = logos_dir
 	dirs['alignment'] = align_dir
 	dirs['preprocessing'] = preprocessing_dir
-	dirs['variantcall'] = variantcalling_dir
+	dirs['variantcalling'] = variantcalling_dir
 	dirs['featextract'] = featuresextraction_dir
 	dirs['script'] = script_dir
 	
