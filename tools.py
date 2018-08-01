@@ -16,7 +16,7 @@ def Bwa_mem(path,threads,sample_name,fastq1,fastq2,reference,log,workdir):
 			pass
 		else: 
 			print elem 
-	print '- BWA mem'
+	#print '- BWA mem'
 	
 	if fastq2 == None:
 		args = [path,'mem',reference,fastq1,'-t',threads]
@@ -31,7 +31,7 @@ def Bwa_mem(path,threads,sample_name,fastq1,fastq2,reference,log,workdir):
 		exit(1)
 
 def SamFormatConverter(path,ram,sam,log,workdir):
-	print '- From Sam to Bam'
+	#print '- From Sam to Bam'
 	bam= workdir + '/' + '.'.join(sam.split('/')[-1].split('.')[:-1])+'.bam'
 	args = ['java','-Xmx'+ram,'-jar',path,'SamFormatConverter','I='+sam,'O='+bam]
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -42,7 +42,7 @@ def SamFormatConverter(path,ram,sam,log,workdir):
 		exit(1)
 
 def SortSam(path,ram,bam,log,workdir):
-	print '- Bam sorting'
+	#print '- Bam sorting'
 	sort = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1])+'.sort.bam'
 	args = ['java','-Xmx'+ram,'-jar',path,'SortSam','I='+bam,'O='+sort,'SORT_ORDER=coordinate']
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -53,7 +53,7 @@ def SortSam(path,ram,bam,log,workdir):
 		exit(1)
 
 def SureCallTrimmer(path,ram,fq1,fq2,tag,outdir,log,workdir):
-	print '- Adapters trimming'
+	#print '- Adapters trimming'
 	args = ['java','-Xmx'+ram,'-jar',path,'-fq1',fq1,'-fq2',fq2,'-'+tag,'-out_loc',outdir]
 	success = subprocess.call(args,stdout=log,stderr=log)
 
@@ -73,7 +73,7 @@ def SureCallTrimmer(path,ram,fq1,fq2,tag,outdir,log,workdir):
 		exit(1)
 	
 def LocatIt(path,ram,bam,fqI2,log,workdir):
-	print "- Merging haloplex molecular barcodes"
+	#print "- Merging haloplex molecular barcodes"
 	outbam = workdir +'/'+ '.'.join(sam.split('/')[-1].split('.')[:-1] + ['MCBmerged'] +['bam'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-U','-IB','-OB','-i','-o',outbam,bam,fqI2]
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -88,7 +88,7 @@ def LocatIt(path,ram,bam,fqI2,log,workdir):
 
 def AddOrReplaceReadGroups(path,ram,bam,sample_name,panel,run,log,workdir):
 
-	print "- Add/replace Read groups"
+	#print "- Add/replace Read groups"
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['RG'] +['bam'])
 	args = ['java','-Xmx'+ram,'-jar',path,'AddOrReplaceReadGroups','I='+bam,'O='+outbam,'RGID='+sample_name,'RGPL=ILLUMINA','RGSM='+sample_name,'RGLB='+panel,"RGPU="+run,'VALIDATION_STRINGENCY=LENIENT']
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -116,7 +116,7 @@ def BuildBamIndex(path,ram,bam,log):
 
 def MarkDuplicates(path,ram,bam,log,workdir):
 
-	print "- Marking duplicates"
+	#print "- Marking duplicates"
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['Mark'] +['bam'])
 	metrics_file = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['MarkMetrics'] +['txt'])
 	args = ['java','-Xmx'+ram,'-jar',path,'MarkDuplicates','I='+bam,'O='+outbam,'METRICS_FILE='+metrics_file,'READ_NAME_REGEX=null','ASSUME_SORTED=true','VALIDATION_STRINGENCY=LENIENT']
@@ -130,7 +130,7 @@ def MarkDuplicates(path,ram,bam,log,workdir):
 
 def IndelRealigner(path,ram,bam,reference,mills,target,log,workdir):
 
-	print "- Indel realignment"
+	#print "- Indel realignment"
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IR'] +['bam'])
 	intervals = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IndelRealigner'] +['intervals'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-T','RealignerTargetCreator','-R',reference,'-I', bam,'-o',intervals,'-known',mills,'-L',target]
@@ -153,7 +153,7 @@ def IndelRealigner(path,ram,bam,reference,mills,target,log,workdir):
 
 def BaseRecalibrator(path,ram,bam,reference,dbsnp,mills,target,log,workdir):
 
-	print "- Base quality score recalibration"
+	#print "- Base quality score recalibration"
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['BQSR'] +['bam'])
 	table = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['BQSR'] +['table'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-T','BaseRecalibrator','-R',reference,'-I', bam,'-o',table,'-knownSites',dbsnp,'-knownSites',mills,'-L',target]
@@ -178,7 +178,7 @@ def BaseRecalibrator(path,ram,bam,reference,dbsnp,mills,target,log,workdir):
 
 ###----------------------------------------------------------------------------------------------VARIANTCALLING-------------------------------------------------------------------------------------
 
-def mpileup(name,reference,sbam,gbam,bam_list,target,log,workdir):
+def mpileup(name,reference,gbam,sbam,bam_list,target,log,workdir):
 
 	start_time = datetime.datetime.now()
 	#print "- Mpileup"
@@ -254,7 +254,6 @@ def GenotypeGVCFs(path,ram,name,gvcf_list,reference,target,log,workdir):
 def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- Mutect2"
 	vcf = workdir + '/' + name + '.Mutect.vcf'
 	
 	if gbam == None:
@@ -358,14 +357,14 @@ def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,target,log,work
 		f.prRed('Error in VarScan mpileup2indel. Check log file.')
 		exit(1)
 
-def VarScan_somatic(path,ram,mpileup,sample_list,reference,target,log,workdir):
+def VarScan_somatic(path,ram,mpileup,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
 	#print "- VarScan mpileup2indel"
 	vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan'])
 	snp = vcf+'.snp.vcf'
 	indel = svcf+'.indel.vcf'
-	args = ['java','-Xmx'+ram,'-jar',path,'somatic',mpileup,sample_list,'--output-vcf','1','--strand-filter 0','--mpileup 1']
+	args = ['java','-Xmx'+ram,'-jar',path,'somatic',mpileup,'--output-vcf','1','--strand-filter 0','--mpileup 1']
 
 	if target != None:
 		args += ['-L',target]
@@ -377,10 +376,10 @@ def VarScan_somatic(path,ram,mpileup,sample_list,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- VarScan mpileup2indel: %d min, %d sec" % elapsed_time
+		print "- VarScan mpileup2somatic: %d min, %d sec" % elapsed_time
 		return snp,indel
 	else:
-		f.prRed('Error in VarScan mpileup2indel. Check log file.')
+		f.prRed('Error in VarScan mpileup2somatic. Check log file.')
 		exit(1)
 
 def Concat_VarScan_vcf(snp,indel,log):
@@ -391,10 +390,10 @@ def Concat_VarScan_vcf(snp,indel,log):
 	open_sort = open(sort,'w')
 
 	args = ['bgzip',snp]
-	status = subprocess.call('bgzip -f'+snp, shell=True)
+	status = subprocess.call('bgzip -f '+snp, shell=True)
 	status = subprocess.call('tabix -f '+snp+'.gz', shell=True)
 
-	status = subprocess.call('bgzip -f'+indel, shell=True)
+	status = subprocess.call('bgzip -f '+indel, shell=True)
 	status = subprocess.call('tabix -f '+indel+'.gz', shell=True)
 	
 	args = ['vcf-concat',snp+'.gz',indel+'.gz']
@@ -447,56 +446,123 @@ def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,design,
 
 ###------------------------------------------------------------------------------------------FEATURES EXTRACTION--------------------------------------------------------------------------------
 
-def Features_extraction(path,gatk,freebayes,varscan,merged,gvcf_path,design,log,workdir):
+def merge_vcf(path,name,gatk,freebayes,varscan,log,workdir):
 
-	if merged != None:
-		args = ['python',path,'-m',merged,'-o',out_tsv,'--gvcf_path',gvcf_path,'--split','--feat_extraction','--out_path',workdir,'--listaFeatures',lista_features]
-	else:
-		args = ['python',path,'-g',gatk,'-f',freebayes,'-v',varscan,'-o',out_tsv,'--gvcf_path',gvcf_path,'--split','--feat_extraction','--out_path',workdir,'--listaFeatures',lista_features]
+	merge_vcf = workdir + '/' + name + '.merge.vcf'
+	args = ['python',path,'-g',gatk,'-f',freebayes,'-v',varscan,'-o',merge_vcf]
 	success = subprocess.call(args,stdout=log,stderr=log)
 
-	if design == 'Amplicon':
-		args += ['--amplicon']
+	if not success:
+		return merge_vcf
+	else:
+		f.prRed('Error in Vcf merging. Check log file.')
+		exit(1)
+
+
+def features_extractor(path,outpath,gatk,freebayes,varscan,merge,features_list,gvcf_path,design,log,workdir):
+	start_time = datetime.datetime.now()
+	args = ['python',path,'--listaFeatures',features_list,'--gvcf_path',gvcf_path,'-o',outpath]
+	tsvfile = outpath+'/tsv.list'
+
+	if merge != None:
+		args += ['--merge',merge]
+	else:
+		args += ['-g',gatk,'-f',freebayes,'-v',varscan]
+
+	if design == "Amplicon":
+		args += ['-a']
+
+	success = subprocess.call(args,stderr=log)
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 
 	if not success:
-		return fix_vcf
+		#print "- Estraction: %d min, %d sec" % elapsed_time
+		return merge,tsvfile
 	else:
-		f.prRed('Error in Vcf fix. Check log file.')
+		f.prRed('Error in features extraction. Check log file.')
+		exit(1)
+
+
+def features_extractor_somatic(path,outpath,mutect,vardict,varscan,gname,sname,features_list,gvcf_path,design,log,workdir):
+	start_time = datetime.datetime.now()
+	args = ['python',path,'--listaFeatures',features_list,'--gvcf_path',gvcf_path,'-o',outpath]
+	tsvfile = outpath+'/tsv.list'
+
+	args += ['-g',mutect,'-f',vardict,'-v',varscan]
+
+	args += ['-n',gname,'-t',sname]
+
+	if design == "Amplicon":
+		args += ['-a']
+
+	success = subprocess.call(args,stderr=log)
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
+
+	if not success:
+		#print "- Estraction: %d min, %d sec" % elapsed_time
+		return merge,tsvfile
+	else:
+		f.prRed('Error in features extraction. Check log file.')
+		exit(1)
+
+def iEVA(path,vcf,reference,bam_list,log,workdir):
+
+	ieva_vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['iEVA.vcf'])
+	
+	args = ['python',path,'--input',vcf,'--reference',reference,'--list',bam_list,'--outfile',ieva_vcf]
+
+	args+=["--SimpleRepeat","--SimpleRepeatLength","--PseudoNucleotidesComposition","--RepeatMasker",
+		"--gcContent","--VariantClass","--StrandBiasReads","--UnMappedReads","--MappingQualityZero",
+		"--NotPrimaryAlignment","--SupplementaryAlignment","--NotPairedReads","--NotProperPairedReads",
+		"--AlignmentScore","--NumberTotalDupReads","--NumberReadDupRef","--NumberReadDupAlt","--DuplicateReference",
+		"--DuplicateAlternate","--DeltaDuplicate","--iEvaDepth","--iAlleleDepth","--ReadRef","--ReadAlt",
+		"--MeanRefQscore","--MeanAltQscore","--TotalDPUnfilter","--NumberClippedReadsRef","--NumberClippedReadsAlt",
+		"--ClippedReadsRef","--ClippedReadsAlt"]
+
+	success = subprocess.call(args,stdout=log,stderr=log)
+
+	if not success:
+		return ieva_vcf
+	else:
+		f.prRed('Error in iEVA annotation. Check log file.')
 		exit(1)
 
 
 ###----------------------------------------------------------------------------------------------ANNOTATION-------------------------------------------------------------------------------------
 
-def Vep(path,fork,reference,transcript_list,vep_af,vep_plugins,vcf,log,workdir):
+def Vep(path,fork,name,reference,transcript_list,vep_af,vep_plugins,vcf,log,workdir):
 	vep_vcf = workdir + '/' + name + '.VEP.vcf'
 	
 	args = [path,'-i',vcf,'-o',vep_vcf,'--species','homo_sapiens','--assembly','GRCh37','--force_overwrite','--no_stats',
 		'--cache','--offline','--fasta',reference,'--merged',
 		'--sift','b','--polyphen','b','--numbers','--vcf_info_field','ANN',
 		'--hgvs','--transcript_version','--symbol','--canonical',
-		'--check_existing','--vcf','--fork',fork]
+		'--check_existing','--vcf','--fork',fork,'--use_given_ref']
 
 	if vep_af != "":
-		args += [af]
-	if vep_plugins != "":	
-		args += vep_plugins(vep_plugins)	
+		for v in vep_af.split(','):
+			args += [v]
+	if vep_plugins['list'] != '':	
+		args += add_vep_plugins(vep_plugins)	
 
 	if transcript_list == None:
 		args += ['--pick']
 	if transcript_list == "most_severe":
 		args += ['--most_severe']
 	
+	#print args
 	success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
+		print "- VEP"
 		return vep_vcf
 	else:
 		f.prRed('Error in VEP annotation. Check log file.')
 		exit(1)
 
-def vep_plugins(vep_plugins):
+def add_vep_plugins(vep_plugins):
 	args = []
-	plugins = vep_plugins[list].split(',')
+	plugins = vep_plugins['list'].split(',')
 	for plugin in plugins:
 		pl_args = plugin
 		if vep_plugins[plugin]['path'] != "":
@@ -506,6 +572,18 @@ def vep_plugins(vep_plugins):
 
 		args += ['--plugin',pl_args]
 	return args
+
+
+def add_Annotation(path,name,vcf,tsv,tag_list,transcript_list,log,workdir):
+
+	annotated_tsv = workdir + '/' + name + '.tsv'
+	
+	args = ['python',path,'--vcf',vcf,'--tsv',tsv,'-o',annotated_tsv,'--tag_list',tag_list,'--trs_list',transcript_list]
+	success = subprocess.call(args,stdout=log,stderr=log)
+
+	if success:
+		f.prRed('Error in tsv annotation. Check log file.')
+		exit(1)
 
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     TOOLS     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -523,24 +601,13 @@ def header_fix(path,vcf,variantcaller,log):
 
 def vcf_norm(path,vcf,reference,log):
 	norm_vcf = '.'.join(vcf.split('.')[:-1] + ['norm.vcf'])
-	open_norm_vcf = open(norm_vcf,'w')
-	args = [path,'norm','-m','-both','-f',reference,vcf]
-	success = subprocess.call(args,stdout=open_norm_vcf,stderr=log)
-	open_norm_vcf.close()
+	args = [path,'norm','-m','-both','-d','both','-f',reference,vcf,'-o',norm_vcf]
+	success = subprocess.call(args,stdout=log,stderr=log)
+	
 	if not success:
 		return norm_vcf
 	else:
 		f.prRed('Error in Vcf normalization. Check log file.')
 		exit(1)
 
-def merge_vcf(path,name,gatk,freebayes,varscan,log,workdir):
 
-	merge_vcf = workdir + '/' + name + '.merge.vcf'
-	args = ['python',path,'-g',gatk,'-f',freebayes,'-v',varscan,'-o',merge_vcf]
-	success = subprocess.call(args,stdout=log,stderr=log)
-
-	if not success:
-		return merge_vcf
-	else:
-		f.prRed('Error in Vcf merging. Check log file.')
-		exit(1)

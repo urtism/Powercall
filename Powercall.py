@@ -54,7 +54,9 @@ if __name__ == '__main__':
 	align_dir = work_dir + '/ALIGNMENT'
 	preprocessing_dir = work_dir + '/PREPROCESSING'
 	variantcalling_dir = work_dir + '/VARIANTCALLING'
-	featuresextraction_dir = work_dir + '/FEATUREEXTRACTION'
+	gcvf_dir = work_dir + '/VARIANTCALLING/GVCF'
+	featuresextraction_dir = work_dir + '/FEATURES_EXTRACTION'
+	annotation_dir = work_dir + '/ANNOTATION'
 
 	dirs['work'] = work_dir
 	dirs['storage'] = storage_dir
@@ -65,7 +67,9 @@ if __name__ == '__main__':
 	dirs['alignment'] = align_dir
 	dirs['preprocessing'] = preprocessing_dir
 	dirs['variantcalling'] = variantcalling_dir
-	dirs['featextract'] = featuresextraction_dir
+	dirs['gvcf'] = gcvf_dir
+	dirs['featsextract'] = featuresextraction_dir
+	dirs['annotation'] = annotation_dir
 	dirs['script'] = script_dir
 	
 	f.makedirs([work_dir, work_dir+'/STORAGE', work_dir+'/OUTPUT', storage_dir, out_dir, delete_dir,log_dir])
@@ -77,7 +81,7 @@ if __name__ == '__main__':
 
 	workflow = opts.workflow
 	if workflow == 'ALL':
-		workflow = 'AMIBVFE'
+		workflow = 'ARMIBVFE'
 
 	if design == 'Amplicon':
 		workflow=re.sub('MIB','',workflow)

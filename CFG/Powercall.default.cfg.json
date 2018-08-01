@@ -34,9 +34,9 @@
 "VEP":{
 "path":"/home/jarvis/NGS_TOOLS/ensembl-vep/vep",
 "fork":"2",
-"af":"--af,--max_af,--af_1kg,--af_esp,--af_gnomad,--af_exac",
+"af":"--af,--max_af,--af_1kg,--af_esp,--af_gnomad",
 "plugins":{
-"list":"GeneSplicer,MaxEntScan,SpliceRegion,REVEL",
+"list":"GeneSplicer,MaxEntScan,SpliceRegion",
 "GeneSplicer":{
 "path":"/home/jarvis/.vep/Plugins/GeneSplicer/GeneSplicer/sources/genesplicer",
 "fields":"/home/jarvis/.vep/Plugins/GeneSplicer/GeneSplicer/human"
@@ -115,7 +115,7 @@
 "SCALPEL":{
 "path":"/home/jarvis/NGS_TOOLS/scalpel-0.5.3/scalpel-discovery"
 }},
-"file":{
+"files":{
 "LISTAFEATURES_GERMLINE":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_germline.list",
 "LISTAFEATURES_SOMATIC":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_somatic.list",
 "ANN_LIST_GERMLINE":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_annotazione.list",

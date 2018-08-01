@@ -23,49 +23,49 @@ def panel_check(panel,cfg):
 		design = 'Enrichment'
 		target_list = cfg['target']['TARGET_TRUSIGHTCARDIO_LIST']
 		target_bed = cfg['target']['TARGET_TRUSIGHTCARDIO_BED']
-		transcripts_list = cfg['file']['TRANSCR_TRUSIGHTCARDIO']
+		transcripts_list = cfg['files']['TRANSCR_TRUSIGHTCARDIO']
 
 	elif panel == 'TrusightCancer':
 		design = 'Enrichment'
 		target_list = cfg['target']['TARGET_TRUSIGHTCANCER_LIST']
 		target_bed = cfg['target']['TARGET_TRUSIGHTCANCER_BED']
-		transcripts_list = cfg['file']['TRANSCR_TRUSIGHTCANCER']
+		transcripts_list = cfg['files']['TRANSCR_TRUSIGHTCANCER']
 
 	elif panel == 'TrusightOne':
 		design = 'Enrichment'
 		target_list = cfg['target']['TARGET_TRUSIGHTONE_LIST']
 		target_bed = cfg['target']['TARGET_TRUSIGHTONE_BED']
-		transcripts_list = cfg['file']['TRANSCR_TRUSIGHTONE']
+		transcripts_list = cfg['files']['TRANSCR_TRUSIGHTONE']
 
 	elif panel == 'BRCAMASTRDx':
 		design = 'Amplicon'
 		target_list = cfg['target']['TARGET_MULTIPLICOM_BRCA_LIST']
 		target_bed = cfg['target']['TARGET_MULTIPLICOM_BRCA_BED']
-		transcripts_list = cfg['file']['TRANSCR_BRCA']
+		transcripts_list = cfg['files']['TRANSCR_BRCA']
 
 	elif panel == 'HTC':
 		design = 'Enrichment'
 		target_list = cfg['target']['TARGET_HTC_SOPHIA_LIST']
 		target_bed = cfg['target']['TARGET_HTC_SOPHIA_BED']
-		transcripts_list = cfg['file']['TRANSCR_HTC_SOPHIA']
+		transcripts_list = cfg['files']['TRANSCR_HTC_SOPHIA']
 
 	elif panel == 'CustomSSQXT':
 		design = 'Enrichment'
 		target_list = cfg['target']['TARGET_SURESELECT_LIST']
 		target_bed = cfg['target']['TARGET_SURESELECT_BED']
-		transcripts_list = cfg['file']['TRANSCR_SURESELECT']
+		transcripts_list = cfg['files']['TRANSCR_SURESELECT']
 
 	elif panel == 'CustomHPHS':
 		design = 'Amplicon'
 		target_list = cfg['target']['TARGET_HALOPLEX_LIST']
 		target_bed = cfg['target']['TARGET_HALOPLEX_BED']
-		transcripts_list = cfg['file']['TRANSCR_HALOPLEX']
+		transcripts_list = cfg['files']['TRANSCR_HALOPLEX']
 
 	elif panel == 'Custom':
 		design = opts.design
 		target_list = cfg['target']['TARGET_CUSTOM_LIST']
 		target_bed = cfg['target']['TARGET_CUSTOM_BED']
-		transcripts_list = cfg['file']['TRANSCR_CUSTOM']
+		transcripts_list = cfg['files']['TRANSCR_CUSTOM']
 
 	return design,target_list,target_bed,transcripts_list
 
@@ -109,7 +109,7 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 						sfq2 = line.split('\t')[5]
 						ssheet[sample_name] = [[gsample_name,gfq1,gfq2],[ssample_name,sfq1,sfq2]]
 	
-	elif step == 'Preprocessing' or step == 'Variantcalling':
+	elif step == 'Preprocessing':
 		with open(samplesheet,'r') as ss:
 			for line in ss:
 				line=line.rstrip()
@@ -125,12 +125,43 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 					sbam = line.split('\t')[3]
 					ssheet[sample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
 
+	elif step == 'VariantCalling':
+		with open(samplesheet,'r') as ss:
+			for line in ss:
+				line=line.rstrip()
+				if analysis == 'Germline' or analysis == 'Somatic':
+					sample_name = line.split('\t')[0]
+					bam = line.split('\t')[1]
+					ssheet[sample_name] = [[sample_name,bam]]
 
-	elif step == 'FeaturesExtracion':
-		pass
+				elif analysis == 'Somatic_Case_Control':
+					gsample_name = line.split('\t')[0]
+					gbam = line.split('\t')[1]
+					ssample_name = line.split('\t')[2]
+					sbam = line.split('\t')[3]
+					ssheet[sample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
+
+	elif step == 'Featuresextraction':
+		with open(samplesheet,'r') as ss:
+			for line in ss:
+				line=line.rstrip()
+				if analysis == 'Germline':
+					sample_name = line.split('\t')[0]
+					vcf_gatk = line.split('\t')[1]
+					vcf_freebayes = line.split('\t')[2]
+					vcf_varscan = line.split('\t')[3]
+					ssheet[sample_name] = [[sample_name,vcf_gatk,vcf_freebayes,vcf_varscan]]
 
 	elif step == 'Annotation':
-		pass
+		with open(samplesheet,'r') as ss:
+			for line in ss:
+				line=line.rstrip()
+				if analysis == 'Germline':
+					name = line.split('\t')[0]
+					vcf = line.split('\t')[1]
+					samples = line.split('\t')[2]
+					ssheet[name] = [[name,vcf,samples]]
+					#ssheet[name] = [[name,vcf]]
 			
 	return ssheet
 

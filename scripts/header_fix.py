@@ -28,6 +28,8 @@ for line in read:
 		 	except:
 		 		pass
 			line=','.join(riga)
+
+		
 	# 	if line.startswith('chr'):
 	# 		riga=line.split('\t')
 	# 		replaced = re.sub('[(chr)]', '', riga[0])
@@ -67,7 +69,8 @@ for line in read:
 			elif '/' in alt:
 				riga[4]=alt.split('/')[0]
 				riga[7]+=";FIX"
-
+				
+			line = re.sub('1/0','0/1',line)
 			line='\t'.join(riga)
 
 	elif opts.variantcaller == 'P':
