@@ -92,7 +92,7 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 						sfq1 = line.split('\t')[5]
 						sfq2 = line.split('\t')[6]
 						sfqI2 = line.split('\t')[7]
-						ssheet[sample_name] = [[gsample_name,gfq1,gfq2,gfqI2],[ssample_name,sfq1,sfq2,sfqI2]]
+						ssheet[ssample_name] = [[gsample_name,gfq1,gfq2,gfqI2],[ssample_name,sfq1,sfq2,sfqI2]]
 				else:
 					if analysis == 'Germline' or analysis == 'Somatic':
 						sample_name = line.split('\t')[0]
@@ -107,7 +107,7 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 						ssample_name = line.split('\t')[3]
 						sfq1 = line.split('\t')[4]
 						sfq2 = line.split('\t')[5]
-						ssheet[sample_name] = [[gsample_name,gfq1,gfq2],[ssample_name,sfq1,sfq2]]
+						ssheet[ssample_name] = [[gsample_name,gfq1,gfq2],[ssample_name,sfq1,sfq2]]
 	
 	elif step == 'Preprocessing':
 		with open(samplesheet,'r') as ss:
@@ -123,7 +123,7 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 					gbam = line.split('\t')[1]
 					ssample_name = line.split('\t')[2]
 					sbam = line.split('\t')[3]
-					ssheet[sample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
+					ssheet[ssample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
 
 	elif step == 'VariantCalling':
 		with open(samplesheet,'r') as ss:
@@ -139,7 +139,7 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 					gbam = line.split('\t')[1]
 					ssample_name = line.split('\t')[2]
 					sbam = line.split('\t')[3]
-					ssheet[sample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
+					ssheet[ssample_name] = [[gsample_name,gbam],[ssample_name,sbam]]
 
 	elif step == 'Featuresextraction':
 		with open(samplesheet,'r') as ss:
@@ -151,6 +151,11 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 					vcf_freebayes = line.split('\t')[2]
 					vcf_varscan = line.split('\t')[3]
 					ssheet[sample_name] = [[sample_name,vcf_gatk,vcf_freebayes,vcf_varscan]]
+				elif analysis == 'Somatic_Case_Control':
+					gsample_name = line.split('\t')[0]
+					ssample_name = line.split('\t')[1]
+					mutect_vcf,vardict_vcf,varscan_vcf = line.split('\t')[2:]
+					ssheet[ssample_name] = [[gsample_name,ssample_name,mutect_vcf,vardict_vcf,varscan_vcf]]
 
 	elif step == 'Annotation':
 		with open(samplesheet,'r') as ss:
@@ -162,6 +167,11 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 					samples = line.split('\t')[2]
 					ssheet[name] = [[name,vcf,samples]]
 					#ssheet[name] = [[name,vcf]]
+				elif analysis == 'Somatic_Case_Control':
+					name = line.split('\t')[0]
+					vcf = line.split('\t')[1]
+					tsv = line.split('\t')[2]
+					ssheet[name] = [[name,vcf,tsv]]
 			
 	return ssheet
 

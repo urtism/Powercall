@@ -17,7 +17,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser('This is the most cool Pipeline you have ever seen')
 	parser.add_argument('-v', '--version', action='version', version='Powercall v3.2.0')
 
-	parser.add_argument('-c', '--cfg', help="Configuration file in json format", required=True)
+	parser.add_argument('-c', '--cfg', help="Configuration file in json format")
 	parser.add_argument('-s', '--samplesheet', help="Samplesheet that contains filepaths and samples associated", required=True)
 	parser.add_argument('-d', '--design', help="Design of the NGS experiment [Enrichment,Amplicon].",choices=['Enrichment','Amplicon'])
 	parser.add_argument('-p', '--panel', help="Type of Panel used for the analysis [TrusightCardio (illumina), TrusightCancer (illumina), TrusightOne (illumina), BRCAMASTRDx (MULTIPLICOM), HTC (SophiaGenetics), CustomSSQXT (Custom SureSelect QXT Agilent), CustomHPHS (Custom HaloPlex HS Agilent), Custom (Other Custom panel)]",

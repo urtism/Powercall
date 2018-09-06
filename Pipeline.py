@@ -104,7 +104,7 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
-		samplesheet = dirs['log'] + '/preprocessing.samplesheet'
+		samplesheet = dirs['log'] + '/Preprocessing.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['alignment']])
@@ -133,7 +133,7 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 		print ""
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
-		samplesheet = dirs['log'] + '/variantcalling.samplesheet'
+		samplesheet = dirs['log'] + '/Variantcalling.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['preprocessing']])
@@ -256,7 +256,7 @@ def Pipeline_Germline_Singlesample(workflow,samplesheet,design,panel,dirs,cfg,op
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
-		samplesheet = dirs['log'] + '/preprocessing.samplesheet'
+		samplesheet = dirs['log'] + '/Preprocessing.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['alignment']])
@@ -278,7 +278,7 @@ def Pipeline_Germline_Singlesample(workflow,samplesheet,design,panel,dirs,cfg,op
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
-		samplesheet = dirs['log'] + '/variantcalling.samplesheet'
+		samplesheet = dirs['log'] + '/Variantcalling.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['preprocessing']])
@@ -319,7 +319,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
-		samplesheet = dirs['log'] + '/preprocessing.samplesheet'
+		samplesheet = dirs['log'] + '/Preprocessing.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['alignment']])
@@ -331,14 +331,14 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 				gbam = Alignment(panel,gsample_name,gfq1,gfq2,gfqI2,dirs,cfg,opts,alignment_log,workdir)
 
 				ssample_name,sfq1,sfq2,sfqI2 = samples[sample][1]
-				sbam = Alignment(panel,gsample_name,sfq1,sfq2,sfqI2,dirs,cfg,opts,alignment_log,workdir)
+				sbam = Alignment(panel,ssample_name,sfq1,sfq2,sfqI2,dirs,cfg,opts,alignment_log,workdir)
 
 			else:
 				gsample_name,gfq1,gfq2 = samples[sample][0]
 				gbam = Alignment(panel,gsample_name,gfq1,gfq2,None,dirs,cfg,opts,alignment_log,workdir)
 
 				ssample_name,sfq1,sfq2 = samples[sample][1]
-				sbam = Alignment(panel,gsample_name,sfq1,sfq2,None,dirs,cfg,opts,alignment_log,workdir)
+				sbam = Alignment(panel,ssample_name,sfq1,sfq2,None,dirs,cfg,opts,alignment_log,workdir)
 
 			new_samplesheet.write(gsample_name+'\t'+gbam+'\t'+ssample_name+'\t'+sbam+'\n')
 		alignment_log.close()
@@ -355,7 +355,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
-		samplesheet = dirs['log'] + '/variantcalling.samplesheet'
+		samplesheet = dirs['log'] + '/Variantcalling.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['preprocessing']])
@@ -388,25 +388,26 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 
 		for sample in samples.keys():
+
 			gsample_name,gbam = samples[sample][0]
 			ssample_name,sbam = samples[sample][1]
-			
-			mutect_vcf = tools.Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,variantcalling_log,workdir)
+			print "-"+ssample_name
+			mutect_vcf = tools.Mutect2(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],gbam,sbam,gsample_name,ssample_name,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
 			mutect_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],mutect_vcf,cfg['reference']['FASTA'],variantcalling_log)
 
-			vardict_vcf = tools.Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,design,reference,variantcalling_log,workdir)
+			vardict_vcf = tools.Vardict(cfg['variantcaller']['VARDICT']['path'],cfg['variantcaller']['VARDICT']['script_dir'],cfg['variantcaller']['VARDICT']['threads'],gbam,sbam,gsample_name,ssample_name,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
 			vardict_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],vardict_vcf,cfg['reference']['FASTA'],variantcalling_log)
 			
-			mpileup = tools.mpileup(name,cfg['reference']['FASTA'],gbam,sbam,None,target_bed,variantcalling_log,workdir)
-			varscan_snp_vcf,varscan_indel_vcf = tools.VarScan_somatic(cfg['variantcaller']['VARSCAN']['path'],cfg['variantcaller']['VARSCAN']['ram'],mpileup,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
+			mpileup = tools.mpileup(ssample_name,cfg['reference']['FASTA'],gbam,sbam,None,target_bed,variantcalling_log,workdir)
+			varscan_snp_vcf,varscan_indel_vcf = tools.VarScan_somatic(cfg['variantcaller']['VARSCAN']['path'],cfg['variantcaller']['VARSCAN']['ram'],None,mpileup,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
 			varscan_vcf = tools.Concat_VarScan_vcf(varscan_snp_vcf,varscan_indel_vcf,variantcalling_log)
 			varscan_vcf = tools.header_fix(dirs['script']+'header_fix.py',varscan_vcf,'V',variantcalling_log)
 			varscan_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],varscan_vcf,cfg['reference']['FASTA'],variantcalling_log)
+			
+			new_samplesheet.write('\t'.join([gsample_name,ssample_name,mutect_vcf,vardict_vcf,varscan_vcf]))
 
-			name = gsample_name+"_SomaticCC"
-			new_samplesheet.write('\t'.join([name,mutect_vcf,vardict_vcf,varscan_vcf]))
-			variantcalling_log.close()
-			new_samplesheet.close()
+		variantcalling_log.close()
+		new_samplesheet.close()
 
 	if 'F' in workflow:
 		print "\nFEATURES EXTRACTION"
@@ -420,18 +421,37 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 		workdir = dirs['variantcalling']
 
 		for sample in samples.keys():
-			name,mutect_vcf,vardict_vcf,varscan_vcf = samples[sample][0]
+			gsample_name,ssample_name,mutect_vcf,vardict_vcf,varscan_vcf = samples[sample][0]
 			bam_list = workdir+'/bams.list'
 			#ieva_vcf = tools.iEVa(cfg['tools']['iEVA']['path'],merge_vcf,cfg['reference']['FASTA'],bam_list,log,workdir)
 			workdir = dirs['featsextract']
+			name = ssample_name+'_SomaticCC'
 			#toannotate_vcf = '/home/jarvis/Scrivania/TEST/pipeline/test1/VARIANTCALLING/20180510_prova.merge.vcf'
-			toannotate_vcf,samples_list = tools.features_extractor(dirs['script']+'features_extractor.py',workdir,None,None,None,merge_vcf,cfg['files']['LISTAFEATURES_GERMLINE'],dirs['gvcf'],design,featuresextraction_log,workdir)
-		
-		new_samplesheet.write('\t'.join([name,toannotate_vcf,samples_list]))
+			tsvfile,vcffile = tools.features_extractor_somatic(dirs['script']+'features_extractor_somatic.py',workdir+'/'+name,mutect_vcf,vardict_vcf,varscan_vcf,gsample_name,ssample_name,cfg['files']['LISTAFEATURES_SOMATIC'],target_bed,featuresextraction_log,workdir)
+			new_samplesheet.write('\t'.join([name,vcffile,tsvfile]))
 		new_samplesheet.close()
 		featuresextraction_log.close()
+	
 	if 'E' in workflow:
+		print "\nANNOTATION"
+
+		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Annotation')
+		annotation_log = open(dirs['log'] + '/Annotation.log','w+')
+		#samplesheet = dirs['log'] + '/.samplesheet'
+		#new_samplesheet = open(samplesheet,'w+')
+		workdir = dirs['annotation']
+		f.makedirs([dirs['annotation']])
+		for sample in samples.keys():
+			print sample
+			name,vcf,tsvfile= samples[sample][0]
+			annotated_vcf = tools.Vep(cfg['annotation']['VEP']['path'],cfg['annotation']['VEP']['fork'],name,cfg['reference']['FASTA'],transcripts_list,cfg['annotation']['VEP']['af'],cfg['annotation']['VEP']['plugins'],vcf,annotation_log,workdir)
+			workdir = dirs['out']
+			#annotated_vcf = '/home/jarvis/Scrivania/TEST/pipeline/test1/ANNOTATION/20180510_prova.VEP.vcf'
+			tools.add_Annotation(dirs['script']+'annotation_extractor.py',name,annotated_vcf,tsvfile,cfg['files']['ANN_LIST_SOMATIC'],transcripts_list,annotation_log,workdir)
 		pass
+
+		
+
 
 def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list,target_bed,transcripts_list):
 
@@ -441,7 +461,7 @@ def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
-		samplesheet = dirs['log'] + '/preprocessing.samplesheet'
+		samplesheet = dirs['log'] + '/Preprocessing.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['alignment']])
@@ -463,7 +483,7 @@ def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
-		samplesheet = dirs['log'] + '/variantcalling.samplesheet'
+		samplesheet = dirs['log'] + '/Variantcalling.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
 
 		f.makedirs([dirs['preprocessing']])
