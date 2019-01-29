@@ -633,7 +633,7 @@ def header_fix(path,vcf,variantcaller,log):
 
 def vcf_norm(path,vcf,reference,log):
 	norm_vcf = '.'.join(vcf.split('.')[:-1] + ['norm.vcf'])
-	args = [path,'norm','-d','both','-f',reference,vcf,'-o',norm_vcf]
+	args = [path,'norm','-D','-m','-both','-f',reference,vcf,'-o',norm_vcf]
 	success = subprocess.call(args,stdout=log,stderr=log)
 	
 	if not success:
