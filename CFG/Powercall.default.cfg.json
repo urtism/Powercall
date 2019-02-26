@@ -116,10 +116,10 @@
 "path":"/home/jarvis/NGS_TOOLS/scalpel-0.5.3/scalpel-discovery"
 }},
 "files":{
-"LISTAFEATURES_GERMLINE":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_germline.list",
+"LISTAFEATURES_GERMLINE":"/home/jarvis/git/Powercall/CFG/lista_features_germline.list",
 "LISTAFEATURES_SOMATIC":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_somatic.list",
-"ANN_LIST_GERMLINE":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_annotazione.list",
-"ANN_LIST_SOMATIC":"/home/jarvis/NGS_ANALYSIS/TARGET/Features_lists/lista_features_annotazione.list",
+"ANN_LIST_GERMLINE":"/home/jarvis/git/Powercall/CFG/lista_features_annotazione.list",
+"ANN_LIST_SOMATIC":"/home/jarvis/git/Powercall/CFG/lista_features_annotazione.list",
 "TRANSCR_TRUSIGHTCARDIO":"/home/jarvis/NGS_ANALYSIS/TARGET/Lista_trascritti_Cardio.txt",
 "TRANSCR_BRCA":"/home/jarvis/NGS_ANALYSIS/TARGET/Lista_trascritti_BRCA.txt",
 "TRANSCR_TRUSIGHTCANCER":"/home/jarvis/NGS_ANALYSIS/TARGET/Lista_trascritti_Cancer.txt"

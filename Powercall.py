@@ -24,7 +24,7 @@ if __name__ == '__main__':
 		choices="[TrusightCardio, TrusightCancer, TrusightOne, BRCAMASTRDx, HTC, CustomSSQXT, CustomHPHS, Custom]")
 	parser.add_argument('-a', '--analysis', help="Type of analysis [Germline (Multisample), GermlineSS (Singlesample), SomaticCC (Case-Control), Somatic (only Case)].", choices=['Germline', 'GermlineSS','SomaticCC','Somatic'], default='Germline')
 	parser.add_argument('-id','--run_id', help="Run id [YYYYMMDD_Run_NRUN_PANEL}", required=True)
-	parser.add_argument('-w', '--workdir', help="Working Directory. Use this option if you want to work in a precise directory. Default: '~/NGS_ANALYSIS/run_id'")
+	parser.add_argument('-w', '--workdir', help="Working Directory. Use this option if you want to work in a precise directory. Default: '~/NGS_ANALYSIS/run_id'", default=None)
 	parser.add_argument('--workflow', help="String that indicates which steps the analysis must do: A-> Alignment, R-> AddOrReplaceReadGroups, M-> MarkDuplicates, I-> IndelRealigner, B-> BaseRecalibrator, V-> Variant Calling, F-> Features Extraction, E-> Annotation. Es: --start AMIBVFE indicates all steps (like --start ALL), --start MIBV starts from MarkDuplicates and ends to Variant Calling. Default: ALL ", default='ALL')
 
 		
@@ -41,10 +41,11 @@ if __name__ == '__main__':
 		cfg = json.loads((open(os.path.dirname(os.path.abspath(__file__)) + '/CFG/Powercall.default.cfg.json').read()).encode('utf8'))
 
 	script_dir = os.path.dirname(os.path.abspath(__file__)) + '/scripts/'
+	
 	if opts.workdir != None:
 		work_dir = opts.workdir
 	else:
-		work_dir = '~/NGS_ANALYSIS/' + opts.run_id
+		work_dir = opts.run_id
 
 	logos_dir = os.path.dirname(os.path.abspath(__file__)) + '/LOGOS'
 	storage_dir = work_dir + '/STORAGE/'+opts.run_id

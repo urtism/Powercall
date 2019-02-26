@@ -210,7 +210,7 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 		featuresextraction_log = open(dirs['log'] + '/FeaturesExtraction.log','w+')
 		samplesheet = dirs['log'] + '/Annotation.samplesheet'
 		new_samplesheet = open(samplesheet,'w+')
-		f.makedirs([dirs['featsextract']])
+		f.makedirs([dirs['featsextract'],dirs['variantcalling']])
 		workdir = dirs['variantcalling']
 
 		for sample in samples.keys():

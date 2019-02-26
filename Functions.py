@@ -13,8 +13,8 @@ def prRed(prt): print("\033[91m {}\033[00m" .format(prt))
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
 
 def makedirs(dirs):
-    for d in dirs:
-        if not os.path.exists(d):
+	for d in dirs:
+		if not os.path.exists(d):
 			os.makedirs(d)
 
 def panel_check(panel,cfg):
