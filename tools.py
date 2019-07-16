@@ -2,7 +2,7 @@ import subprocess
 import Functions as f
 import os
 import datetime
-
+from ruffus import *
 ###----------------------------------------------------------------------------------------------ALIGNMENT-------------------------------------------------------------------------------------
 
 
@@ -53,6 +53,7 @@ def SortSam(path,ram,bam,log,workdir):
 		exit(1)
 
 def SureCallTrimmer(path,ram,fq1,fq2,tag,outdir,log,workdir):
+
 	#print '- Adapters trimming'
 	args = ['java','-Xmx'+ram,'-jar',path,'-fq1',fq1,'-fq2',fq2,'-'+tag,'-out_loc',outdir]
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -133,9 +134,12 @@ def IndelRealigner(path,ram,bam,reference,mills,target,log,workdir):
 	#print "- Indel realignment"
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IR'] +['bam'])
 	intervals = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IndelRealigner'] +['intervals'])
-	args = ['java','-Xmx'+ram,'-jar',path,'-T','RealignerTargetCreator','-R',reference,'-I', bam,'-o',intervals,'-known',mills,'-L',target]
-	success = subprocess.call(args,stdout=log,stderr=log)
 
+	#args = [path,'RealignerTargetCreator','-R',reference,'-I', bam,'-o',intervals,'-known',mills,'-L',target]
+
+	args = ['java','-Xmx'+ram,'-jar',path,'-T','RealignerTargetCreator','-R',reference,'-I', bam,'-o',intervals,'-known',mills,'-L',target]
+	
+	success = subprocess.call(args,stdout=log,stderr=log)
 	if not success:
 		pass
 	else:
@@ -157,6 +161,7 @@ def BaseRecalibrator(path,ram,bam,reference,dbsnp,mills,target,log,workdir):
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['BQSR'] +['bam'])
 	table = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['BQSR'] +['table'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-T','BaseRecalibrator','-R',reference,'-I', bam,'-o',table,'-knownSites',dbsnp,'-knownSites',mills,'-L',target]
+	#args = [path,'BaseRecalibrator','-R',reference,'-I', bam,'-o',table,'-knownSites',dbsnp,'-knownSites',mills,'-L',target]
 	success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
@@ -214,11 +219,20 @@ def HaplotypeCaller(path,ram,bam,sample_name,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
 	gvcf = workdir + '/'+ sample_name + '.g.vcf'
-	args = ['java','-Xmx'+ram,'-jar',path,'-T','HaplotypeCaller','-R',reference,'-I', bam,'-o',gvcf,'-ERC','GVCF','--doNotRunPhysicalPhasing']
+	
+	version = check_version_gatk(path,log)
+	if version.startswith('3'):
+		args = ['java','-Xmx'+ram,'-jar',path,'-T','HaplotypeCaller','-R',reference,'-I', bam,'-o',gvcf,'-ERC','GVCF','--doNotRunPhysicalPhasing']
+	elif version.startswith('4.1'):
+		args = [path,'HaplotypeCaller','-R',reference,'-I', bam,'-O',gvcf,'-ERC','GVCF']
+		args += ['--max-reads-per-alignment-start','0']
+		args += ['--enable-all-annotations']
+		#args += ['-G','AS_StandardAnnotation']
 
 	if target != None:
 		args += ['-L',target]
 
+	#
 	success = subprocess.call(args,stdout=log,stderr=log)
 	#success = 0
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
@@ -230,17 +244,26 @@ def HaplotypeCaller(path,ram,bam,sample_name,reference,target,log,workdir):
 		f.prRed('Error in gvcf generation: '+ sample_name+'. Check log file.')
 		exit(1)
 
-def GenotypeGVCFs(path,ram,name,gvcf_list,reference,target,log,workdir):
+def GenotypeGVCFs(path,ram,gvcf,name,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
+
+	version = check_version_gatk(path,log)
 	#print "- GenotypeGVCFs"
 	vcf = workdir + '/' + name + '.GATK.vcf'
-	args = ['java','-Xmx'+ram,'-jar',path,'-T','GenotypeGVCFs','-R',reference,'-V:VCF', gvcf_list,'-o',vcf]
-
+	if version.startswith('3'):
+		args = ['java','-Xmx'+ram,'-jar',path,'-T','GenotypeGVCFs','-R',reference,'-V:VCF', gvcf,'-o',vcf]
+	elif version.startswith('4.1'):
+		args = [path,'GenotypeGVCFs','-R',reference,'-V', gvcf,'-O',vcf]
+		#args += ['-G','AS_StandardAnnotation']
+		args += ['--java-options','-Xmx'+ ram]
+		#args += ['--enable-all-annotations']
+		args += ['-A','StrandBiasBySample']
 	if target != None:
 		args += ['-L',target]
 
 	success = subprocess.call(args,stdout=log,stderr=log)
+	#success =0
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
@@ -251,13 +274,13 @@ def GenotypeGVCFs(path,ram,name,gvcf_list,reference,target,log,workdir):
 		exit(1)
 
 
-
 def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
 	vcf = workdir + '/' + ssample_name + '.Mutect.vcf'
+	filtered_vcf = workdir + '/' + ssample_name + '.Mutect.filter.vcf'
 
-	version = check_version_gatk(path)
+	version = check_version_gatk(path,log)
 	
 	if version.startswith('3'):
 		if gbam == None:
@@ -267,31 +290,75 @@ def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,target,log,wo
 			args = ['java','-Xmx'+ram,'-jar',path,'-T','MuTect2','-R',reference,
 				'-I:tumor',sbam, '-I:normal',gbam,'-o',vcf]
 
-	elif version.startswith('4'):
+	if version.startswith('4.1'):
 		if gbam == None:
-			args = ['java','-Xmx'+ram,'-jar',path,'-T','MuTect2','-R',reference,
-				'-I',sbam,'-tumor',ssample_name,'-o',vcf]
+			args = [path,'Mutect2','-R',reference,
+				'-I',sbam,'-tumor',ssample_name,'--max-reads-per-alignment-start','0','-O',vcf]
 		else:
-			args = ['java','-Xmx'+ram,'-jar',path,'-T','MuTect2','-R',reference,
+			args = [path,'Mutect2','-R',reference,
 				'-I',sbam, '-tumor',ssample_name, '-I',gbam,
-				'-normal',gsample_name,'-o',vcf]
+				'-normal',gsample_name,'--max-reads-per-alignment-start','0','-O',vcf]
+
 	if target != None:
 		args += ['-L',target]
 
+	#success = subprocess.call(args)
 	success = subprocess.call(args,stdout=log,stderr=log)
+
+	args = [path,'FilterMutectCalls','-R',reference,'-V',vcf,'-O',filtered_vcf]
+
+	success = subprocess.call(args,stdout=log,stderr=log)
+
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- Mutect2: %d min, %d sec" % elapsed_time
-		return vcf
+		print "- "+ ssample_name + ": %d min, %d sec" % elapsed_time
+		return filtered_vcf
 	else:
 		f.prRed('Error in Mutect2. Check log file.')
 		exit(1)
 
-def check_version_gatk(path):
-	args = ['java','-jar',path,'--version']
-	success= subprocess.Popen(args,stdout=subprocess.PIPE)
-	version = success.stdout.read()
+def CombineGVCFs(path,ram,gvcf_array,sample_name,reference,target,log,workdir):
+
+	start_time = datetime.datetime.now()
+	gvcf_cohort = workdir + '/'+ sample_name + '.g.vcf'
+	
+	version = check_version_gatk(path,log)
+	if version.startswith('3'):
+		args = ['java','-Xmx'+ram,'-jar',path,'-T','CombineGVCFs','-R',reference,'-o',gvcf_cohort]
+	elif version.startswith('4.1'):
+		args = [path,'CombineGVCFs','-R',reference,'-O',gvcf_cohort]
+		#args += ['-G','AS_StandardAnnotation']
+
+		args += ['--enable-all-annotations']
+
+	if target != None:
+		args += ['-L',target]
+
+	for gvcf in gvcf_array:
+		args += ['-V',gvcf]
+
+	success = subprocess.call(args,stdout=log,stderr=log)
+	#success = 0
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
+	
+	if not success:
+		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		return gvcf_cohort
+	else:
+		f.prRed('Error in CombineGVCFs: '+ sample_name+'. Check log file.')
+		exit(1)
+
+
+def check_version_gatk(path,log):
+	if path.endswith('.jar'):
+		args = ['java','-jar',path,'--version']
+	else:
+		args = [path,'--version']
+	success= subprocess.Popen(args,stdout=subprocess.PIPE,stderr=log)
+	version = success.stdout.read().split('\n')[0].split(' ')[-1]
+	if version.startswith('v'):
+		version=version[1:]
 	return version
 
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     FREEBAYES     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -308,6 +375,15 @@ def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 	else:
 		args = [path,'-f',reference,'-b', bam,'-v',vcf,
 			'--pooled-discrete','--pooled-continuous','--genotype-qualities','--report-genotype-likelihood-max','--allele-balance-priors-off']
+
+
+	args += ['-m','0']
+	#args += ['-q','0']
+	#args += ['-R','0']
+	#args += ['-Y','0']
+	#args += ['-Q','1']
+	args += ['-F','0.05']
+	args += ['-C','3']
 
 	if target != None:
 		args += ['-t',target]
@@ -336,7 +412,7 @@ def VarScan_mpileup2snp(path,ram,mpileup,sample_list,reference,target,log,workdi
 		args += ['-L',target]
 
 	#if filters == '0':
-		#args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
+	args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
 
 	success = subprocess.call(args,stdout=open_vcf,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
@@ -361,7 +437,7 @@ def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,target,log,work
 		args += ['-L',target]
 
 	#if filters == '0':
-		#args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
+	args += ['--min-coverage','1','--min-var-freq','0.01','--min-reads2','1','--min-avg-qual','0','--p-value','0.95']
 
 	success = subprocess.call(args,stdout=open_vcf,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
@@ -475,12 +551,49 @@ def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,referen
 		f.prRed('Error in VarDict. Check log file.')
 		exit(1)
 
+###------------------------------------------------------------------------------------------FILTERING------------------------------------------------------------------------------------------
+
+def HardFilter(path,ram,vcf,sample_name,reference,target,log,workdir):
+
+	start_time = datetime.datetime.now()
+	vcf_filtered = workdir + '/' + '.'.join(vcf.split('/')[-1].split('.')[:-1] + ['FILTER.vcf'])
+
+	version = check_version_gatk(path,log)
+	if version.startswith('3'):
+		args = ['java','-Xmx'+ram,'-jar',path,'-T','VariantFiltration','-V',vcf,'-R',reference,'-o',vcf_filtered]
+	elif version.startswith('4.1'):
+		args = [path,'VariantFiltration','-R',reference,'-V',vcf,'-O',vcf_filtered]
+
+	if 'FreeBayes' in vcf:
+		pass
+		#args += ['--filter-name','Low-AD','--filter-expression',"AO < 20" ]
+		#args += ['--filter-name','Low-MapQual','--filter-expression',"MQM < 40.0"]
+	else:
+		#args += ['--filter-name','Low-Qual','--filter-expression',"QD < 2.0"]
+		#args += ['--filter-name','High-FS','--filter-expression',"FS > 60.0"]
+		#args += ['--filter-name','High-SOR','--filter-expression',"SOR > 3.0"]
+		#args += ['--filter-name','Low-MapQual','--filter-expression',"MQ < 40.0"]
+		args += ['--filter-name','LOW-MQMQRS','--filter-expression',"MQRankSum < -2.5"]
+		args += ['--filter-name','HIGH-RPOS','--filter-expression',"ReadPosRankSum < -8.0 || ReadPosRankSum > 8.0 "]
+
+	success = subprocess.call(args,stdout=log,stderr=log)
+	#success = 0
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
+	
+	if not success:
+		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		return vcf_filtered
+	else:
+		f.prRed('Error in HardFiltering: '+ sample_name+'. Check log file.')
+		exit(1)
 ###------------------------------------------------------------------------------------------FEATURES EXTRACTION--------------------------------------------------------------------------------
 
 def merge_vcf(path,name,gatk,freebayes,varscan,log,workdir):
 
 	merge_vcf = workdir + '/' + name + '.merge.vcf'
-	args = ['python',path,'-g',gatk,'-f',freebayes,'-v',varscan,'-o',merge_vcf]
+	args = ['python',path,'-g',gatk,'-f',freebayes,'-o',merge_vcf]
+	if varscan:
+		args += ['-v',varscan]
 	success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
@@ -495,13 +608,17 @@ def features_extractor(path,outpath,gatk,freebayes,varscan,merge,features_list,g
 	args = ['python',path,'--listaFeatures',features_list,'--gvcf_path',gvcf_path,'-o',outpath]
 	tsvfile = outpath+'/tsv.list'
 
-	if merge != None:
+	if merge:
 		args += ['--merge',merge]
-	else:
-		args += ['-g',gatk,'-f',freebayes,'-v',varscan]
+	if gatk:
+		args += ['-g',gatk]
+	if freebayes:
+		args += ['-f',freebayes]
+	if varscan:
+		args += ['-v']
 
-	if design == "Amplicon":
-		args += ['-a']
+	# if design == "Amplicon":
+	# 	args += ['-a']
 
 	success = subprocess.call(args,stderr=log)
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
@@ -537,9 +654,32 @@ def features_extractor_somatic(path,outpath,mutect,vardict,varscan,gname,sname,f
 		f.prRed('Error in features extraction. Check log file.')
 		exit(1)
 
+def features_extractor_somatic_MUTECT2(path,outpath,mutect,sname,features_list,design,log,workdir):
+	start_time = datetime.datetime.now()
+	args = ['python',path,'--listaFeatures',features_list,'-o',outpath]
+	tsvfile = outpath+'.tsv'
+	vcffile = outpath+'.vcf'
+
+	args += ['-g',mutect]
+
+	args += ['-t',sname]
+
+	if design == "Amplicon":
+		args += ['-a']
+
+	success = subprocess.call(args,stdout=log,stderr=log)
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
+
+	if not success:
+		#print "- Estraction: %d min, %d sec" % elapsed_time
+		return tsvfile,mutect
+	else:
+		f.prRed('Error in features extraction. Check log file.')
+		exit(1)
+
 def iEVA(path,vcf,reference,bam_list,log,workdir):
 
-	ieva_vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['iEVA.vcf'])
+	ieva_vcf = workdir + '/' + '.'.join(vcf.split('/')[-1].split('.')[:-1] + ['iEVA.vcf'])
 	
 	args = ['python',path,'--input',vcf,'--reference',reference,'--list',bam_list,'--outfile',ieva_vcf]
 
@@ -559,6 +699,61 @@ def iEVA(path,vcf,reference,bam_list,log,workdir):
 		f.prRed('Error in iEVA annotation. Check log file.')
 		exit(1)
 
+def VariantAnnotator(path,vcf,reference,bam,target,log,workdir):
+
+	start_time = datetime.datetime.now()
+	
+	out_vcf = workdir + '/' + '.'.join(vcf.split('/')[-1].split('.')[:-1] + ['VA.vcf'])
+	
+	version = check_version_gatk(path,log)
+	if version.startswith('3'):
+		args = ['java','-Xmx'+ram,'-jar',path,'-T','VariantAnnotator','-R',reference,'-o',out_vcf]
+	elif version.startswith('4.1'):
+		args = [path,'VariantAnnotator','-R',reference,'-O',out_vcf]
+		args += ['-V', vcf, '-I', bam]
+		#args += ['-G','AS_StandardAnnotation']
+		#args += ['--enable-all-annotations']
+		#args += ['-G','StandardAnnotation']
+		#args += ['-A', 'TandemRepeat']
+
+	if target != None:
+		args += ['-L',target]
+	print ' '.join(args)
+	success = subprocess.call(args,stdout=log,stderr=log)
+	#success = 0
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
+	
+	if not success:
+		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		return out_vcf
+	else:
+		f.prRed('Error in VariantAnnotator: '+ vcf+'. Check log file.')
+		exit(1)
+
+
+def SelectVariants(path,vcf,reference,sample_name,log,workdir):
+
+	start_time = datetime.datetime.now()
+	out_vcf = workdir + '/' + sample_name+ '.GATK.vcf'
+	
+	version = check_version_gatk(path,log)
+	if version.startswith('3'):
+		args = ['java','-Xmx'+ram,'-jar',path,'-T','SelectVariants','-R',reference,'-o',out_vcf]
+	elif version.startswith('4.1'):
+		args = [path,'SelectVariants','-R',reference,'-O',out_vcf,'--keep-original-ac']
+		args += ['-V', vcf]
+		args += ['--sample-name',sample_name]
+
+	success = subprocess.call(args,stdout=log,stderr=log)
+	#success = 0
+	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
+	
+	if not success:
+		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		return out_vcf
+	else:
+		f.prRed('Error in SelectVariants: '+ vcf +'. Check log file.')
+		exit(1)
 
 ###----------------------------------------------------------------------------------------------ANNOTATION-------------------------------------------------------------------------------------
 
@@ -582,11 +777,12 @@ def Vep(path,fork,name,reference,transcript_list,vep_af,vep_plugins,vcf,log,work
 	if transcript_list == "most_severe":
 		args += ['--most_severe']
 	
-	#print args
+
+	#print ' '.join(args)
 	success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
-		print "- VEP"
+		print "- VEP: " + name
 		return vep_vcf
 	else:
 		f.prRed('Error in VEP annotation. Check log file.')
@@ -599,6 +795,8 @@ def add_vep_plugins(vep_plugins):
 		pl_args = plugin
 		if vep_plugins[plugin]['path'] != "":
 			pl_args += ',' + vep_plugins[plugin]['path']
+		if vep_plugins[plugin]['files'] != "":
+			pl_args += ',' + vep_plugins[plugin]['files']
 		if vep_plugins[plugin]['fields'] != "":	
 			pl_args += ',' + vep_plugins[plugin]['fields']
 
@@ -616,6 +814,7 @@ def add_Annotation(path,name,vcf,tsv,tag_list,transcript_list,log,workdir):
 	if success:
 		f.prRed('Error in tsv annotation. Check log file.')
 		exit(1)
+	return annotated_tsv
 
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     TOOLS     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -643,3 +842,41 @@ def vcf_norm(path,vcf,reference,log):
 		exit(1)
 
 
+def LeftAlignAndTrimVariants(path,vcf,reference,log):
+	norm_vcf = '.'.join(vcf.split('.')[:-1] + ['norm.vcf'])
+	args = [path,'LeftAlignAndTrimVariants','-R',reference,'-V',vcf,'-O',norm_vcf,'--split-multi-allelics']
+	success = subprocess.call(args,stdout=log,stderr=log)
+	if not success:
+		return norm_vcf
+	else:
+		f.prRed('Error in Vcf LeftAlignAndTrimVariants normalization. Check log file.')
+		exit(1)
+
+def Index_vcf(path,vcf,log):
+	args = [path,'IndexFeatureFile','-F',vcf]
+	success = subprocess.call(args,stdout=log,stderr=log)
+	if not success:
+		pass
+	else:
+		f.prRed('Error in Index Vcf. Check log file.')
+		exit(1)
+
+def Sort_vcf(path,vcf,log,workdir):
+	sorted_vcf = '.'.join(vcf.split('.')[:-1] + ['sort.vcf'])
+	open_sorted_vcf = open(sorted_vcf,'w')
+	args = ['vcf-sort',vcf]
+	success = subprocess.call(args,stdout=open_sorted_vcf,stderr=log)
+
+	open_sorted_vcf.close()
+
+	args = ['bgzip',sorted_vcf,'-f','>',sorted_vcf+'.gz']
+	success = subprocess.call(args,stdout=log,stderr=log)
+
+	args = ['tabix','-p','vcf',sorted_vcf+'.gz']
+	success = subprocess.call(args,stdout=log,stderr=log)
+
+	if not success:
+		return sorted_vcf+'.gz'
+	else:
+		f.prRed('Error in Vcf Sorting. Check log file.')
+		exit(1)

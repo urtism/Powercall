@@ -6,7 +6,7 @@ import re
 
 parser = argparse.ArgumentParser('Parse VCF HEADER from FreeBayes,VarScan,GATK to fix it.  Output is to stdout.')
 parser.add_argument('-f', '--file', help="freebayes vcf output file name")
-parser.add_argument('-v', '--variantcaller', help="variant caller: F = freebayes, G = GATK, V = Varscan, P = Platypus, S = Samtools, L = Scalpel, N = SNVer" )
+parser.add_argument('-v', '--variantcaller', help="variant caller: F = freebayes, G = GATK, V = Varscan, P = Platypus, S = Samtools, L = Scalpel, N = SNVer, M = Mutect2" )
 
 opts = parser.parse_args()
 
@@ -45,6 +45,17 @@ for line in read:
 				line=','.join(riga)
 			except:
 				pass
+
+	elif opts.variantcaller == 'M':
+	
+		if line.startswith('##INFO=<ID=RPA'):
+			riga=line.split(',')
+			try:
+				riga[riga.index('Number=.')]='Number=R'
+				line=','.join(riga)
+			except:
+				pass
+
 
 	elif opts.variantcaller == 'V':
 		

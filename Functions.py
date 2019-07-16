@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+from ruffus import *
 import json
 import os
 import textwrap
@@ -11,6 +12,26 @@ import regex as re
 
 def prRed(prt): print("\033[91m {}\033[00m" .format(prt))
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
+
+
+def init_dirs(work_dir,opts):
+
+	dirs = dict()
+	dirs['work'] = work_dir
+	dirs['storage'] = work_dir + '/STORAGE/'+opts.run_id
+	dirs['out'] = work_dir + '/OUTPUT/'+opts.run_id
+	dirs['log'] = work_dir + '/LOGS'
+	dirs['delete'] = work_dir + '/DELETE'
+	dirs['alignment'] = work_dir + '/ALIGNMENT'
+	dirs['preprocessing'] = work_dir + '/PREPROCESSING'
+	dirs['variantcalling'] = work_dir + '/VARIANTCALLING'
+	dirs['gvcf'] = work_dir + '/VARIANTCALLING/GVCF'
+	dirs['featsextract'] = work_dir + '/FEATURES_EXTRACTION'
+	dirs['annotation'] = work_dir + '/ANNOTATION'
+	dirs['script'] = os.path.dirname(os.path.abspath(__file__)) + '/scripts/'
+	dirs['logo'] = os.path.dirname(os.path.abspath(__file__)) + '/LOGOS'
+	
+	return dirs
 
 def makedirs(dirs):
 	for d in dirs:
@@ -147,15 +168,23 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 				line=line.rstrip()
 				if analysis == 'Germline':
 					sample_name = line.split('\t')[0]
-					vcf_gatk = line.split('\t')[1]
-					vcf_freebayes = line.split('\t')[2]
-					vcf_varscan = line.split('\t')[3]
-					ssheet[sample_name] = [[sample_name,vcf_gatk,vcf_freebayes,vcf_varscan]]
+					try:
+						vcf_gatk = line.split('\t')[1]
+						vcf_freebayes = line.split('\t')[2]
+						vcf_varscan = line.split('\t')[3]
+						ssheet[sample_name] = [[sample_name,vcf_gatk,vcf_freebayes,vcf_varscan]]
+					except:
+						vcf_merge = line.split('\t')[1]
+						ssheet[sample_name] = [[sample_name,vcf_merge]]
 				elif analysis == 'Somatic_Case_Control':
 					gsample_name = line.split('\t')[0]
 					ssample_name = line.split('\t')[1]
 					mutect_vcf,vardict_vcf,varscan_vcf = line.split('\t')[2:]
 					ssheet[ssample_name] = [[gsample_name,ssample_name,mutect_vcf,vardict_vcf,varscan_vcf]]
+				elif analysis == 'Somatic':
+					ssample_name = line.split('\t')[0]
+					mutect_vcf = line.split('\t')[1]
+					ssheet[ssample_name] = [[ssample_name,mutect_vcf]]
 
 	elif step == 'Annotation':
 		with open(samplesheet,'r') as ss:
@@ -167,7 +196,7 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 					samples = line.split('\t')[2]
 					ssheet[name] = [[name,vcf,samples]]
 					#ssheet[name] = [[name,vcf]]
-				elif analysis == 'Somatic_Case_Control':
+				elif analysis == 'Somatic_Case_Control' or analysis == 'Somatic':
 					name = line.split('\t')[0]
 					vcf = line.split('\t')[1]
 					tsv = line.split('\t')[2]
@@ -178,10 +207,21 @@ def ReadSampleSheet(samplesheet,analysis,panel,step):
 
 def Delete(files):
 	for f in files:
-		if os.path.isfile(f) or os.path.ispath(f): 
+		if os.path.isfile(f): 
+			status = subprocess.call("rm -rf" + f, shell=True)
+		elif os.path.ispath(f):
 			status = subprocess.call("rm -rf" + f, shell=True)
 
 def Move(files,newdir):
 	for f in files:
-		if os.path.isfile(f) or os.path.ispath(f): 
+		if os.path.isfile(f): 
 			status = subprocess.call("mv " + f + ' ' + newdir, shell=True)
+		elif os.path.ispath(f):
+			status = subprocess.call("mv " + f + ' ' + newdir, shell=True)
+
+def Copy(files,newdir):
+	for f in files:
+		if os.path.isfile(f): 
+			status = subprocess.call("cp " + f + ' ' + newdir, shell=True)
+		else:
+			print files

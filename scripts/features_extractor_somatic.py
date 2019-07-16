@@ -1212,11 +1212,12 @@ def main():
 	opts = parser.parse_args()
 	
 	callers = [opts.mutect,opts.varscan,opts.vardict]
-	print callers
 	varianti = dict() 
 	index=0;
 
 	for vcf in callers:
+
+
 		in_file = open(vcf,'r')
 		vcfreader = read(in_file,index,varianti)
 		index = index + 1

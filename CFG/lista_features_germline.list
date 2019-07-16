@@ -1,8 +1,8 @@
 CallGATK
-CallVarscan
+#CallVarscan
 CallFreebayes
 GT_GATK
-GT_Varscan
+#GT_Varscan
 GT_Freebayes
 FILTER
 AC
@@ -24,10 +24,16 @@ AF_mean
 #SQD
 MBQ_mean
 #MBQ_median
+MQ_mean
+#MQ_median
 #STRBIAS_GATK
 #STRBIAS_Varscan
 #STRBIAS_Freebayes
-STRBIAS_mean
+#STRBIAS_mean
+#STROR_GATK
+#STROR_Freebayes
+#SOR_mean
+#SOR_GATK
 #AC_mean
 #STRBIAS_median
 #STRBIAS_TOT_GATK
@@ -53,7 +59,7 @@ STRBIAS_mean
 #DS_GATK
 #END_GATK
 #ExcessHet_GATK
-#FS_GATK
+FS_GATK
 #HaplotypeScore_GATK
 #InbreedingCoeff_GATK
 #MLEAC_GATK
@@ -62,8 +68,7 @@ STRBIAS_mean
 #MQRankSum_GATK
 #QD_GATK
 #RAW_MQ_GATK
-ReadPosRankSum_GATK
-#SOR_GATK
+#ReadPosRankSum_GATK
 #lod_Freebayes
 #AO_f_TOT_Freebayes
 #AO_r_TOT_Freebayes

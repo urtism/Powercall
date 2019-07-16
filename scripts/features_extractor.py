@@ -7,6 +7,7 @@ import os
 import scipy.stats as stats
 import numpy as np
 import datetime
+import math
 
 ''' //////////// CLASSI ////////////'''
 
@@ -76,6 +77,7 @@ class Freebayes(Caller):
 	RUN=''
 	SAP=''
 	SRP=''
+	STROR=''
 
 	#PROVENIENTI DAL FORMAT
 	lod=''
@@ -93,7 +95,7 @@ class GATK(Caller):
 	DS=''
 	END=''
 	ExcessHet=''
-	FS=''
+	FS='.'
 	HaplotypeScore=''
 	InbreedingCoeff=''
 	MLEAC=''
@@ -104,6 +106,7 @@ class GATK(Caller):
 	RAW_MQ=''
 	ReadPosRankSum='.'
 	SOR=''
+	STROR=''
 
 class Varscan(Caller):
 
@@ -138,6 +141,9 @@ class Features():
 	QB_Freebayes='.'
 	MBQ_mean='.'
 	MBQ_median='.'
+
+	MQ_mean='.'
+	MQ_median='.'
 	
 	AF_GATK='0'
 	AF_Varscan='0'
@@ -178,7 +184,7 @@ class Features():
 	AN_Varscan='.'
 	AN_Freebayes='.'
 	AN='.'
-
+	
 	#features solo di GATK
 	sQD_GATK='.'
 	AF_TOT_GATK='.'
@@ -251,22 +257,150 @@ class Features():
 	#features solo di Varscan
 	SDP_Varscan=''
 
+	SOR_mean='.'
+	SOR_median='.'
+
+	#features di iEVA
+	#Reference extraction arguments
+	SimpleRepeat_iEVA='.'
+	SimpleRepeatLength_iEVA='.'
+	SimpleRepeatUnit_iEVA='.'
+	PseudoNucleotidesComposition_iEVA='.'
+	RepeatMasker_iEVA='.'
+	gcContent_iEVA='.'
+	VariantClass_iEVA='.'
+
+	#bam extraction
+
+	StrandBiasReads_iEVA='.'
+	UnMappedReads_iEVA='.'
+	MeanMappingQuality_iEVA='.'
+	MappingQualityZero_iEVA='.'
+	NotPrimaryAlignment_iEVA='.'
+	SupplementaryAlignment_iEVA='.'
+	NotPairedReads_iEVA='.'
+	NotProperPairedReads_iEVA='.'
+	AlignmentScore_iEVA='.'
+	TotalDupReads_iEVA='.'
+	
+	#Genotype extraction
+
+	NumberReadDupRef_iEVA='.'
+	NumberReadDupAlt_iEVA='.'
+	DuplicateReference_iEVA='.'
+	DuplicateAlternate_iEVA='.'
+	DeltaDuplicate_iEVA='.'
+	iEvaDepth_iEVA='.'
+	iAlleleDepth_iEVA='.'
+	ReadRef_iEVA='.'
+	ReadAlt_iEVA='.'
+	MeanRefQscore_iEVA='.'
+	MeanAltQscore_iEVA='.'
+	RefMeanMappingQuality_iEVA='.'
+	AltMeanMappingQuality_iEVA='.'
+	TotalDPUnfilter_iEVA='.'
+	NumberClippedReadsRef_iEVA='.'
+	NumberClippedReadsAlt_iEVA='.'
+	ClippedReadsRef_iEVA='.'
+	ClippedReadsAlt_iEVA='.'
+
 
 ''' //////////// FUNZIONI ////////////'''
 
+''' //////////// FUNZIONI ////////////'''
+
+def get_info_iEVA(chrom,pos,ref,alt,filter,info,format,sample,ieva):
+
+	if "SBR" in format:
+		ieva.StrandBiasReads=sample[format.index("SBR")]
+	if "UnMap" in format:
+		ieva.UnMappedReads=sample[format.index("UnMap")]
+	if "MQ0" in format:
+		ieva.MappingQualityZero=sample[format.index("MQ0")]
+	if "MMQ" in format:
+		ieva.MeanMappingQuality=sample[format.index("MMQ")]
+	if "NPA" in format:
+		ieva.NotPrimaryAlignment=sample[format.index("NPA")]
+	if "SA" in format:
+		ieva.SupplementaryAlignment=sample[format.index("SA")]
+	if "NP" in format:
+		ieva.NotPairedReads=sample[format.index("NP")]
+	if "NPP" in format:
+		ieva.NotProperPairedReads=sample[format.index("NPP")]
+	if "AS" in format:
+		ieva.AlignmentScore=sample[format.index("AS")]
+	if "TDR" in format:
+		ieva.TotalDupReads=sample[format.index("TDR")]
+
+	if "iNDR" in format:
+		ieva.NumberReadDupRef=sample[format.index("iNDR")]
+	if "iNDA" in format:
+		ieva.NumberReadDupAlt=sample[format.index("iNDA")]
+	if "iDR" in format:
+		ieva.DuplicateReference=sample[format.index("iDR")]
+	if "iDA" in format:
+		ieva.DuplicateAlternate=sample[format.index("iDA")]
+	if "iDDup" in format:
+		ieva.DeltaDuplicate=sample[format.index("iDDup")]
+	if "iDP" in format:
+		ieva.iEvaDepth=sample[format.index("iDP")]
+	if "iAD" in format:
+		ieva.iAlleleDepth=sample[format.index("iAD")]
+	if "iRR" in format:
+		ieva.ReadRef=sample[format.index("iRR")]
+	if "iRA" in format:
+		ieva.ReadAlt=sample[format.index("iRA")]
+	if "iQR" in format:
+		ieva.MeanRefQscore=sample[format.index("iQR")]
+	if "iQA" in format:
+		ieva.MeanAltQscore=sample[format.index("iQA")]
+
+	if "TDP" in format:
+		ieva.TotalDPUnfilter=sample[format.index("TDP")]
+	if "iRMQ" in format:
+		ieva.RefMeanMappingQuality=sample[format.index("iRMQ")]
+	if "iAMQ" in format:
+		ieva.AltMeanMappingQuality=sample[format.index("iAMQ")]
+	if "iNCR" in format:
+		ieva.NumberClippedReadsRef=sample[format.index("NCR")]
+	if "iNCA" in format:
+		ieva.NumberClippedReadsAlt=sample[format.index("NCA")]
+	if "iCR" in format:
+		ieva.ClippedReadsRef=sample[format.index("CR")]
+	if "iCA" in format:
+		ieva.ClippedReadsAlt=sample[format.index("CA")]
+
+	for el in info:
+		if el.startswith('SRL='):
+			ieva.SimpleRepeatLength=el.split('=')[1]
+		elif el.startswith('SRU='):
+			ieva.SimpleRepeatUnit=el.split('=')[1]
+		elif el.startswith('SR='):
+			ieva.SimpleRepeat=el.split('=')[1]
+		elif el.startswith('PNC='):
+			ieva.PseudoNucleotidesComposition=el.split('=')[1]
+		elif el.startswith('RM='):
+			ieva.RepeatMasker=el.split('=')[1]
+		elif el.startswith('GC='):
+			ieva.gcContent=el.split('=')[1]
+		elif el.startswith('VC='):
+			ieva.VariantClass=el.split('=')[1]
+
 def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 	'''estrae le informazioni dal vcf di freebayes'''
-	
 	freebayes.GT=sample[format.index('GT')]
 	if freebayes.GT=='.' :
 		freebayes.GT='./.'
-	if freebayes.GT=='./.':
+	if freebayes.GT=='./.' or alt =='*':
 		pass
 		#print chrom,pos,ref,alt,freebayes.GT
 	else:
 		freebayes.GQ=sample[format.index('GQ')]
 		freebayes.AO=float(sample[format.index('AO')])
-		freebayes.RO=float(sample[format.index('RO')])
+		try:
+			freebayes.RO=float(sample[format.index('RO')])
+		except:
+			print chrom,pos,sample
 		#freebayes.DP=freebayes.AO+freebayes.RO
 		freebayes.DP=float(sample[format.index('DP')])
 
@@ -277,13 +411,13 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 
 		for ind in info:
 			if ind.startswith("SAF="):
-				freebayes.AO_f_TOT=float(ind.split('=')[1])
+				freebayes.AO_f_TOT=float(ind.split('=')[1]) +1.0
 			if ind.startswith("SAR="):
-				freebayes.AO_r_TOT=float(ind.split('=')[1])
+				freebayes.AO_r_TOT=float(ind.split('=')[1]) +1.0
 			if ind.startswith("SRF="):
-				freebayes.RO_f_TOT=float(ind.split('=')[1])
+				freebayes.RO_f_TOT=float(ind.split('=')[1]) +1.0
 			if ind.startswith("SRR="):
-				freebayes.RO_r_TOT=float(ind.split('=')[1])
+				freebayes.RO_r_TOT=float(ind.split('=')[1]) +1.0
 			if ind.startswith("AC="):
 				freebayes.AC=ind.split('=')[1]
 			if ind.startswith("AB="):
@@ -384,25 +518,26 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 			freebayes.lod = -1.0
 		
 		try:
-			freebayes.AF=freebayes.AO/freebayes.DP
+			freebayes.AF = freebayes.AO/freebayes.DP
 		except:
-			freebayes.AF
-
-		if opts.amplicon:
-			if min(freebayes.DP_r_TOT,freebayes.DP_f_TOT)/(freebayes.DP_r_TOT+freebayes.DP_f_TOT) >= 0.05:
-				freebayes.STRBIAS_TOT=1-stats.fisher_exact([[freebayes.RO_f_TOT, freebayes.RO_r_TOT], [freebayes.AO_f_TOT, freebayes.AO_r_TOT]])[1]
+			freebayes.AF = '.'
+		try:
+			if freebayes.GT == '1/1':
+				freebayes.STRBIAS = 0
 			else:
-				freebayes.STRBIAS_TOT='.'
-		else:
-			if min(freebayes.DP_r_TOT,freebayes.DP_f_TOT)/(freebayes.DP_r_TOT+freebayes.DP_f_TOT) > 0:
-				freebayes.STRBIAS_TOT=1-stats.fisher_exact([[freebayes.RO_f_TOT, freebayes.RO_r_TOT], [freebayes.AO_f_TOT, freebayes.AO_r_TOT]])[1]
+				freebayes.STRBIAS =-10*math.log10(stats.fisher_exact([[freebayes.RO_f_TOT, freebayes.RO_r_TOT], [freebayes.AO_f_TOT, freebayes.AO_r_TOT]])[1])
+		except:
+			freebayes.STRBIAS = '.'
 
-			else:
-				freebayes.STRBIAS_TOT='.'
+		try:
+			symmetricalRatio  = ((freebayes.RO_f_TOT)*(freebayes.AO_r_TOT))/((freebayes.RO_r_TOT)*(freebayes.AO_f_TOT)) + ((freebayes.RO_r_TOT)*(freebayes.AO_f_TOT))/((freebayes.RO_f_TOT)*(freebayes.AO_r_TOT))
+	 		refRatio = min(freebayes.RO_f_TOT, freebayes.RO_r_TOT) / max(freebayes.RO_f_TOT, freebayes.RO_r_TOT)
+	 		altRatio = min(freebayes.AO_f_TOT, freebayes.AO_r_TOT) / max(freebayes.AO_f_TOT, freebayes.AO_r_TOT)
+			freebayes.STROR = math.log(symmetricalRatio) + math.log(refRatio) - math.log(altRatio)
+		except:
+			freebayes.STROR='.'
 
 		freebayes.FILTER=filter
-		#print chrom,pos,ref,alt,freebayes.GT
-	
 		freebayes.Call=1
 	return freebayes
 
@@ -410,7 +545,8 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 	'''estrae le informazioni dal vcf di GATK'''
 	
 	GATK.GT=sample[format.index('GT')]
-	if GATK.GT=='./.':
+
+	if GATK.GT=='./.' or alt == '*':
 		pass
 	else:
 		GATK.AO=float((sample[format.index('AD')]).split(',')[1])
@@ -430,11 +566,13 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 		except:
 			GATK.AF='.'
 		GATK.STR='0'
+
 		try:
 			GATK.AO_r=float((sample[format.index('SB')]).split(',')[3])
 			GATK.AO_f=float((sample[format.index('SB')]).split(',')[2])
 			GATK.RO_r=float((sample[format.index('SB')]).split(',')[1])
 			GATK.RO_f=float((sample[format.index('SB')]).split(',')[0])
+			#print chrom,pos,GATK.AO_r
 
 			GATK.DP_r=GATK.AO_r+GATK.RO_r
 			GATK.DP_f=GATK.AO_f+GATK.RO_f
@@ -447,7 +585,6 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 			GATK.DP_f='.'
 
 		GATK.QB=sample[format.index('SQD')]
-
 
 		for ind in info:
 			if ind.startswith("AC="):
@@ -492,22 +629,21 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 				GATK.SOR=ind.split('=')[1]
 
 		try:
-			if opts.amplicon:
-				if min(GATK.DP_r,GATK.DP_f)/(GATK.DP_r+GATK.DP_f) >= 0.05:
-					GATK.STRBIAS=1-stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1]
-				else:
-					GATK.STRBIAS='.'
+			if GATK.GT == '1/1':
+				GATK.STRBIAS = 0
 			else:
-				if min(GATK.DP_r,GATK.DP_f)/(GATK.DP_r+GATK.DP_f) > 0 or min(GATK.DP_r,GATK.DP_f)/(GATK.DP_r+GATK.DP_f) == 0 and GATK.GT=='1/1' :
-					GATK.STRBIAS=1-stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1]
-				else:
-					if GATK.DP_r > GATK.DP_f:
-						filter += ['AllRev']
-					elif GATK.DP_r < GATK.DP_f:
-						filter += ['AllFow']
-					GATK.STRBIAS='.'
+				GATK.STRBIAS = -10*math.log10(stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1])
+			#print stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1]
 		except:
-			GATK.STRBIAS='.'
+			GATK.STRBIAS= '.'
+
+		try:
+			symmetricalRatio  = ((GATK.RO_f+1.0)*(GATK.AO_r+1.0))/((GATK.RO_r+1.0)*(GATK.AO_f+1.0)) + ((GATK.RO_r+1.0)*(GATK.AO_f+1.0))/((GATK.RO_f+1.0)*(GATK.AO_r+1.0))
+	 		refRatio = min(GATK.RO_f + 1.0, GATK.RO_r + 1.0) / max(GATK.RO_f + 1.0, GATK.RO_r + 1.0)
+	 		altRatio = min(GATK.AO_f + 1.0, GATK.AO_r + 1.0) / max(GATK.AO_f + 1.0, GATK.AO_r + 1.0)
+			GATK.STROR = math.log(symmetricalRatio) + math.log(refRatio) - math.log(altRatio)
+		except:
+			GATK.STROR='.'
 
 		try:
 			GATK.GQ=float(sample[format.index('GQ')])
@@ -522,7 +658,7 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 	'''estrae le informazioni dal vcf di varscan'''
 	
 	varscan.GT=sample[format.index('GT')]
-	if varscan.GT== './.':
+	if varscan.GT== './.' or alt == '*':
 		#print chrom,pos,ref,alt,varscan.GT
 		pass
 	else:
@@ -568,20 +704,21 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 		except:
 			varscan.AF='.'
 
-		if opts.amplicon:
-			if min((varscan.DP_r),(varscan.DP_f))/(varscan.DP_r+varscan.DP_f) >= 0.05:
-				varscan.STRBIAS = 1-stats.fisher_exact([[varscan.RO_f, varscan.RO_r], [varscan.AO_f, varscan.AO_r]])[1]
+		try:
+			if varscan.Gt == '1/1':
+				varscan.STRBIAS = 0
 			else:
-			 	varscan.STRBIAS = '.'
-		else:
-			if min((varscan.DP_r),(varscan.DP_f))/(varscan.DP_r+varscan.DP_f) > 0 or min((varscan.DP_r),(varscan.DP_f))/(varscan.DP_r+varscan.DP_f) == 0 and  varscan.GT== '1/1':
-				varscan.STRBIAS = 1-stats.fisher_exact([[varscan.RO_f, varscan.RO_r], [varscan.AO_f, varscan.AO_r]])[1]
-			else:
-				if varscan.DP_r > varscan.DP_f:
-					filter += ['AllRev']
-				elif varscan.DP_r < varscan.DP_f:
-					filter += ['AllFow']
-				varscan.STRBIAS = '.'
+				varscan.STRBIAS = -10*math.log10(stats.fisher_exact([[varscan.RO_f, varscan.RO_r], [varscan.AO_f, varscan.AO_r]])[1])
+		except:
+			varscan.STRBIAS= '.'
+
+		try:
+			symmetricalRatio  = ((varscan.RO_f+1.0)*(varscan.AO_r+1.0))/((varscan.RO_r+1.0)*(varscan.AO_f+1.0)) + ((varscan.RO_r+1.0)*(varscan.AO_f+1.0))/((varscan.RO_f+1.0)*(varscan.AO_r+1.0))
+	 		refRatio = min(varscan.RO_f + 1.0, varscan.RO_r + 1.0) / max(varscan.RO_f + 1.0, varscan.RO_r + 1.0)
+	 		altRatio = min(varscan.AO_f + 1.0, varscan.AO_r + 1.0) / max(varscan.AO_f + 1.0, varscan.AO_r + 1.0)
+			varscan.SOR = math.log(symmetricalRatio) + math.log(refRatio) - math.log(altRatio)
+		except:
+			varscan.SOR='.'
 
 		varscan.FILTER=filter
 		#print chrom,pos,ref,alt,varscan.GT
@@ -613,6 +750,7 @@ def set_features(variants):
 		features.AC_Freebayes=varc_array['F'].AC
 		features.AN_Freebayes=varc_array['F'].AN	
 		features.STRBIAS_TOT_Freebayes=varc_array['F'].STRBIAS_TOT
+		features.STROR_Freebayes=varc_array['F'].STROR
 
 		features.AO_f_TOT_Freebayes=varc_array['F'].AO_f_TOT
 		features.AO_r_TOT_Freebayes=varc_array['F'].AO_r_TOT
@@ -677,6 +815,7 @@ def set_features(variants):
 		features.AC_GATK=varc_array['G'].AC
 		features.AN_GATK=varc_array['G'].AN
 		features.STRBIAS_TOT_GATK=varc_array['G'].STRBIAS_TOT
+		features.STROR_GATK=varc_array['G'].STROR
 
 		features.AF_TOT_GATK=varc_array['G'].AF_TOT
 		features.BaseQRankSum_GATK=varc_array['G'].BaseQRankSum
@@ -697,37 +836,88 @@ def set_features(variants):
 		features.ReadPosRankSum_GATK=varc_array['G'].ReadPosRankSum
 		features.SOR_GATK=varc_array['G'].SOR
 
-		features.RF_Varscan=varc_array['V'].RF
-		features.GT_Varscan=varc_array['V'].GT
-		features.AO_Varscan=varc_array['V'].AO
-		features.RO_Varscan=varc_array['V'].RO
-		features.AO_f_Varscan=varc_array['V'].AO_f
-		features.AO_r_Varscan=varc_array['V'].AO_r
-		features.DP_f_Varscan=varc_array['V'].DP_f
-		features.DP_r_Varscan=varc_array['V'].DP_r
-		features.DP_Varscan=varc_array['V'].DP
-		features.QB_Varscan=varc_array['V'].QB
-		features.GQ_Varscan=varc_array['V'].GQ
-		features.CallVarscan=varc_array['V'].Call
-		features.AF_Varscan=varc_array['V'].AF
-		features.STRBIAS_Varscan=varc_array['V'].STRBIAS
-		features.FILTER_Varscan=','.join(varc_array['V'].FILTER)
-		features.AC_Varscan=varc_array['V'].AC
-		features.AN_Varscan=varc_array['V'].AN
-		features.STRBIAS_TOT_Varscan=varc_array['V'].STRBIAS_TOT
-		features.SDP_Varscan=varc_array['V'].SDP
+		if opts.ieva:
+			features.SimpleRepeat_iEVA = varc_array['ieva'].SimpleRepeat
+			features.SimpleRepeatLength_iEVA = varc_array['ieva'].SimpleRepeatLength
+			features.SimpleRepeatUnit_iEVA= varc_array['ieva'].SimpleRepeatUnit
+			features.PseudoNucleotidesComposition_iEVA = '\t'.join((varc_array['ieva'].PseudoNucleotidesComposition).split(','))
+			features.RepeatMasker_iEVA = varc_array['ieva'].RepeatMasker
+			features.gcContent_iEVA = varc_array['ieva'].gcContent
 
+			features.VariantClass_iEVA = varc_array['ieva'].VariantClass
+			features.StrandBiasReads_iEVA = varc_array['ieva'].StrandBiasReads
+			features.UnMappedReads_iEVA = varc_array['ieva'].UnMappedReads
+			features.MeanMappingQuality_iEVA = varc_array['ieva'].MeanMappingQuality
+			features.MappingQualityZero_iEVA = varc_array['ieva'].MappingQualityZero
+			features.NotPrimaryAlignment_iEVA = varc_array['ieva'].NotPrimaryAlignment
+			features.SupplementaryAlignment_iEVA = varc_array['ieva'].SupplementaryAlignment
+			features.NotPairedReads_iEVA = varc_array['ieva'].NotPairedReads
+			features.NotProperPairedReads_iEVA = varc_array['ieva'].NotProperPairedReads
+			features.AlignmentScore_iEVA = varc_array['ieva'].AlignmentScore
+			features.TotalDupReads_iEVA = varc_array['ieva'].TotalDupReads
 
-		vett_MBQ =[features.QB_GATK,features.QB_Freebayes,features.QB_Varscan]
-		vett_DP=[features.DP_GATK,features.DP_Freebayes,features.DP_Varscan]
-		vett_AO=[features.AO_GATK,features.AO_Freebayes,features.AO_Varscan]
-		vett_RO=[features.RO_GATK,features.RO_Freebayes,features.RO_Varscan]
-		vett_AC=[features.AC_GATK,features.AC_Freebayes,features.AC_Varscan]
-		vett_AN=[features.AN_GATK,features.AN_Freebayes,features.AN_Varscan]
-		vett_RF_mean=[features.RF_GATK,features.RF_Freebayes,features.RF_Varscan]
-		vett_AF_mean=[features.AF_GATK,features.AF_Freebayes,features.AF_Varscan]
-		vett_STRB_mean=[features.STRBIAS_GATK,features.STRBIAS_Freebayes,features.STRBIAS_Varscan]
-		
+			features.NumberReadDupRef_iEVA = varc_array['ieva'].NumberReadDupRef
+			features.NumberReadDupAlt_iEVA = varc_array['ieva'].NumberReadDupAlt
+			features.DuplicateReference_iEVA = varc_array['ieva'].DuplicateReference
+			features.DuplicateAlternate_iEVA = varc_array['ieva'].DuplicateAlternate
+			features.DeltaDuplicate_iEVA = varc_array['ieva'].DeltaDuplicate
+			features.iEvaDepth_iEVA = varc_array['ieva'].iEvaDepth
+			features.iAlleleDepth_iEVA = varc_array['ieva'].iAlleleDepth
+			features.ReadRef_iEVA = varc_array['ieva'].ReadRef
+			features.ReadAlt_iEVA = varc_array['ieva'].ReadAlt
+			features.MeanRefQscore_iEVA = varc_array['ieva'].MeanRefQscore
+			features.MeanAltQscore_iEVA = varc_array['ieva'].MeanAltQscore
+			features.RefMeanMappingQuality_iEVA = varc_array['ieva'].RefMeanMappingQuality
+			features.AltMeanMappingQuality_iEVA = varc_array['ieva'].AltMeanMappingQuality
+			features.TotalDPUnfilter_iEVA = varc_array['ieva'].TotalDPUnfilter
+			features.NumberClippedReadsRef_iEVA = varc_array['ieva'].NumberClippedReadsRef
+			features.NumberClippedReadsAlt_iEVA = varc_array['ieva'].NumberClippedReadsAlt
+			features.ClippedReadsRef_iEVA = varc_array['ieva'].ClippedReadsRef
+			features.ClippedReadsAlt_iEVA = varc_array['ieva'].ClippedReadsAlt
+
+		if opts.varscan:
+			features.RF_Varscan=varc_array['V'].RF
+			features.GT_Varscan=varc_array['V'].GT
+			features.AO_Varscan=varc_array['V'].AO
+			features.RO_Varscan=varc_array['V'].RO
+			features.AO_f_Varscan=varc_array['V'].AO_f
+			features.AO_r_Varscan=varc_array['V'].AO_r
+			features.DP_f_Varscan=varc_array['V'].DP_f
+			features.DP_r_Varscan=varc_array['V'].DP_r
+			features.DP_Varscan=varc_array['V'].DP
+			features.QB_Varscan=varc_array['V'].QB
+			features.GQ_Varscan=varc_array['V'].GQ
+			features.CallVarscan=varc_array['V'].Call
+			features.AF_Varscan=varc_array['V'].AF
+			features.STRBIAS_Varscan=varc_array['V'].STRBIAS
+			features.FILTER_Varscan=','.join(varc_array['V'].FILTER)
+			features.AC_Varscan=varc_array['V'].AC
+			features.AN_Varscan=varc_array['V'].AN
+			features.STRBIAS_TOT_Varscan=varc_array['V'].STRBIAS_TOT
+			features.SDP_Varscan=varc_array['V'].SDP
+
+			vett_MBQ =[features.QB_GATK,features.QB_Freebayes,features.QB_Varscan]
+			vett_DP=[features.DP_GATK,features.DP_Freebayes,features.DP_Varscan]
+			vett_AO=[features.AO_GATK,features.AO_Freebayes,features.AO_Varscan]
+			vett_RO=[features.RO_GATK,features.RO_Freebayes,features.RO_Varscan]
+			vett_AC=[features.AC_GATK,features.AC_Freebayes,features.AC_Varscan]
+			vett_AN=[features.AN_GATK,features.AN_Freebayes,features.AN_Varscan]
+			vett_RF_mean=[features.RF_GATK,features.RF_Freebayes,features.RF_Varscan]
+			vett_AF_mean=[features.AF_GATK,features.AF_Freebayes,features.AF_Varscan]
+			vett_STRB_mean=[features.STRBIAS_GATK,features.STRBIAS_Freebayes,features.STRBIAS_Varscan]
+			vett_SOR_mean=[features.STROR_GATK,features.STROR_Freebayes,features.STROR_Varscan]
+		else:
+			vett_MBQ =[features.QB_GATK,features.QB_Freebayes]
+			vett_DP=[features.DP_GATK,features.DP_Freebayes]
+			vett_AO=[features.AO_GATK,features.AO_Freebayes]
+			vett_RO=[features.RO_GATK,features.RO_Freebayes]
+			vett_AC=[features.AC_GATK,features.AC_Freebayes]
+			vett_AN=[features.AN_GATK,features.AN_Freebayes]
+			vett_RF_mean=[features.RF_GATK,features.RF_Freebayes]
+			vett_AF_mean=[features.AF_GATK,features.AF_Freebayes]
+			vett_STRB_mean=[features.STRBIAS_GATK,features.STRBIAS_Freebayes]
+			vett_SOR_mean=[features.STROR_GATK,features.STROR_Freebayes]
+
 		AF_mean=0
 		SB_mean=0
 		AC_mean=0
@@ -822,6 +1012,19 @@ def set_features(variants):
 			features.STRBIAS_median='.'
 
 		v=[]
+		for sor in vett_SOR_mean:
+			if sor != '' and sor is not '.':
+				v=v+[float(sor)]
+		try:
+			features.SOR_mean=round(statistics.mean(v),3)
+		except:
+			features.SOR_mean='.'
+		try:
+			features.SOR_median=round(statistics.median(v),3)
+		except:
+			features.SOR_median='.'
+
+		v=[]
 		for ac in vett_AC:
 			if ac != '' and ac is not '.':
 				v=v+[int(ac)]
@@ -872,16 +1075,68 @@ def set_features(variants):
 			features.RF_median='.'
 
 		v=[]
+		for mq in [features.MQ_GATK,features.MQ_A_Freebayes]:
+			if mq != '' and mq is not '.':
+				v=v+[float(mq)]
+		try:
+			features.MQ_mean=round(statistics.mean(v),3)
+		except:
+			features.MQ_mean='.'
+		try:
+			features.MQ_median=round(statistics.median(v),3)
+		except:
+			features.MQ_median='.'
+
+		v=[]
+		for SOR in vett_SOR_mean:
+			if SOR != '' and SOR is not '.':
+				v=v+[float(SOR)]
+		try:
+			features.SOR_mean=round(statistics.mean(v),3)
+		except:
+			features.SOR_mean='.'
+		try:
+			features.SOR_median=round(statistics.median(v),3)
+		except:
+			features.SOR_median='.'
+
+		v=[]
 		for f in [features.FILTER_GATK,features.FILTER_Freebayes,features.FILTER_Varscan]:
 			if f != '' and f != '.':
 				if f not in v:
 					v += [f]
 		if v == []:
 			v=['.']
+
+		v += set_filters(features)
+		if 'PASS' in v and len(v)>1:
+			del v[v.index('PASS')]
+
 		features.FILTER = ';'.join(v)
 
 		variants[var]['features']= features
 
+def set_filters(features):
+
+	filters = []
+	if features.GT_GATK == './.' and features.GT_Freebayes == '0/0' or \
+		 features.GT_GATK == '0/0' and features.GT_Freebayes == './.' or \
+		 	 features.GT_GATK == '0/0' and features.GT_Freebayes == '0/0':
+		 	 	filters += ['PROB-WT']
+	if features.AO_mean < 20.0:
+		filters += ['LOW-AD']
+	if features.AF_mean < 0.20:
+		filters += ['LOW-FREQ']
+	if features.MQ_mean < 40.0:
+		filters += ['LOW-MAPQUAL']
+	if features.MBQ_mean < 2.0:
+		filters += ['LOW-BASEQUAL']
+	if features.STRBIAS_mean > 60.0:
+		filters += ['HIGH-FS']
+	if features.SOR_mean > 3.0:
+		filters += ['HIGH-SOR']
+
+	return filters
 
 
 def split_format(format,sformat):
@@ -895,7 +1150,10 @@ def split_format(format,sformat):
 	I_sample = []
 	for f in format:
 		if f.endswith('_G'):
-			G_sample += [sformat[format.index(f)]]
+			try:
+				G_sample += [sformat[format.index(f)]]
+			except:
+				G_sample += ['.']
 			newf = re.sub('_G','',f)
 			G_format += [newf]
 		elif f.endswith('_F'):
@@ -940,7 +1198,7 @@ def split_filter(filter):
 	F_filter = []
 	V_filter = []
 
-	for f in filter:
+	for f in filter.split(','):
 		if f.endswith('_G'):
 			newf = re.sub('_G','',f)
 			G_filter += [newf]
@@ -969,7 +1227,6 @@ def readline(file,sample,variants):
 				IDvar='\t'.join([chrom,pos,ref,alt])
 				info=info.split(";")
 				format=format.split(":")
-				#try:
 
 				sformat = line.split("\t")[sample_index].split(':')
 				format,sformat = addInfo_gvcf(chrom,pos,format,sformat,sample)
@@ -977,13 +1234,21 @@ def readline(file,sample,variants):
 				[G_format,G_sample],[F_format,F_sample],[V_format,V_sample],[I_format,I_sample] = split_format(format,sformat)
 				[G_info,F_info,V_info,I_info] = split_info(info)
 				[G_filter,F_filter,V_filter] = split_filter(filter)
-				[G_qual,F_qual,V_qual] = qual.split(',')
+				
+				try:
+					[G_qual,F_qual,V_qual] = qual.split(',')
+				except:
+					[G_qual,F_qual] = qual.split(',')
+
+
+				#print G_filter,F_filter,V_filter
 
 				variants[IDvar] = dict()
 
 				variants[IDvar]['G'] = get_info_GATK(chrom,pos,ref,alt,G_filter,G_info,G_format,G_sample,GATK())
 				variants[IDvar]['F'] = get_info_Freebayes(chrom,pos,ref,alt,F_filter,F_info,F_format,F_sample,Freebayes())
-				variants[IDvar]['V'] = get_info_Varscan(chrom,pos,ref,alt,V_filter,V_info,V_format,V_sample,Varscan())
+				if opts.varscan:
+					variants[IDvar]['V'] = get_info_Varscan(chrom,pos,ref,alt,V_filter,V_info,V_format,V_sample,Varscan())
 				#variants[IDvar]['I'] = get_info_Ieva(chrom,pos,ref,alt,I_filter,I_info,I_format,I_sample,Ieva())
 
 			except Exception:
@@ -999,18 +1264,32 @@ def readline(file,sample,variants):
 def control(vars):
 	''' esegue un controllo sulle varianti, se non hanno variant caller che le chiama vengono eliminate'''
 	for var in vars.keys():
-		if vars[var]['G'].GT == './.' and vars[var]['F'].GT == './.' and vars[var]['V'].GT == './.':
-			del vars[var]
-		else:
-			v=[]
-			for ao in [vars[var]['G'].AO,vars[var]['F'].AO,vars[var]['V'].AO]:
-				if ao != '' and ao is not '.':
-					v=v+[int(ao)]
-			if np.ceil(statistics.mean(v)) == 0.0:
+		try:
+			if vars[var]['G'].GT == './.' and vars[var]['F'].GT == './.' and vars[var]['V'].GT == './.':
 				del vars[var]
+			else:
+				v=[]
+				for ao in [vars[var]['G'].AO,vars[var]['F'].AO,vars[var]['V'].AO]:
+					if ao != '' and ao is not '.':
+						v=v+[int(ao)]
+				if v==[]:
+					del vars[var]
+				elif np.ceil(statistics.mean(v)) == 0.0:
+					del vars[var]
+		except:
+			if vars[var]['G'].GT == './.' and vars[var]['F'].GT == './.':
+				del vars[var]
+			else:
+				v=[]
+				for ao in [vars[var]['G'].AO,vars[var]['F'].AO]:
+					if ao != '' and ao is not '.':
+						v=v+[int(ao)]
+				if v==[]:
+					del vars[var]
+				elif np.ceil(statistics.mean(v)) == 0.0:
+					del vars[var]
 
 def print_var(dictionary,out,sample_name):
-
 
 	lista_features=open(opts.listaFeatures,'r')
 	dataset_varianti=open(out + '/' + sample_name + '.tsv','w')
@@ -1025,14 +1304,11 @@ def print_var(dictionary,out,sample_name):
 			header=header+[line]
 			features_variante=features_variante+['features.'+line]
 
-	#print features_variante
 	dataset_varianti.write('CHROM\tPOS\tID\tREF\tALT\t' + '\t'.join(header)+ '\n')
 	for variante in dictionary.keys():
 		features = dictionary.get(variante)['features']
-		#print features_variante
 		features_variante_eval=[]
 		for feat in features_variante:
-			#print feat
 		 	feat_eval=str(eval(feat))
 		 	features_variante_eval=features_variante_eval + [feat_eval]
 		var=variante.split('\t')[0]+'\t'+variante.split('\t')[1]+'\t' +sample_name +'\t'+variante.split('\t')[2]+'\t'+variante.split('\t')[3]+ '\t' + '\t'.join(features_variante_eval)
@@ -1093,42 +1369,44 @@ def split_vcf(vcf_dir,sample):
 
 
 def addInfo_gvcf(chrom,pos,format,fsample,sample):
-		gvcf = open(opts.gvcf_path +'/' + sample +'.g.vcf','r')
-		sSB = '.'
-		sQD = '.'
 
-		for line in gvcf:
-			line = line.rstrip()
-			if line.startswith(chrom+'\t'+pos) and line.split('\t')[4] != '<NON_REF>':
-				gformat = line.split('\t')[-2]
-				gsample = line.split('\t')[-1]
-				qual = line.split('\t')[5]
-				info = line.split('\t')[7].split(';')
-				try:
-					ad = (gsample.split(':')[(gformat.split(':')).index('AD')]).split(',')
-				except:
-					ad = ['0','0','0']
-				
-				ad = map(float, ad)
-				ad_sum = sum(ad[1:])
+	gvcf = open(opts.gvcf_path +'/' + sample +'.g.vcf','r')
+	sSB = '.'
+	sQD = '.'
 
-				try:
-					sSB = gsample.split(':')[(gformat.split(':')).index('SB')]
-				except:
-					#print 'ci sono problemi',sample,chrom,pos,format,gsample
-					sSB = '.'
+	for line in gvcf:
+		line = line.rstrip()
+		if line.startswith(chrom+'\t'+pos) and line.split('\t')[4] != '<NON_REF>':
+			gformat = line.split('\t')[-2]
+			gsample = line.split('\t')[-1]
+			qual = line.split('\t')[5]
+			info = line.split('\t')[7].split(';')
+			try:
+				ad = (gsample.split(':')[(gformat.split(':')).index('AD')]).split(',')
+			except:
+				ad = ['0','0','0']
+			
+			ad = map(float, ad)
+			ad_sum = sum(ad[1:])
 
-				try:
-					sQD = round(float(qual)/ad_sum ,2)
-				except:
-					#print 'ci sono problemi',sample,chrom,pos,format,gsample
-					sQD = 0.0
-				break
-		
-		format = format + ['SB_G','SQD_G']
-		fsample = fsample + [sSB,str(sQD)]
-		gvcf.close()
-		return format,fsample
+			try:
+				sSB = gsample.split(':')[(gformat.split(':')).index('SB')]
+			except:
+				#print 'ci sono problemi',sample,chrom,pos,format,gsample
+				sSB = '.'
+
+			try:
+				sQD = round(float(qual)/ad_sum ,2)
+			except:
+				#print 'ci sono problemi',sample,chrom,pos,format,gsample
+				sQD = 0.0
+			break
+	format = format + ['SB_G','SQD_G']
+
+	fsample = fsample + [sSB,str(sQD)]
+
+	gvcf.close()
+	return format,fsample
 
 
 def main():
@@ -1136,7 +1414,8 @@ def main():
 	parser = argparse.ArgumentParser('Parse VCF output from Variant callers to output a variant_dataset.txt.  Output is to stdout.')
 	parser.add_argument('-l', '--listaFeatures', help="Lista di features da stampare",default=None)
 	parser.add_argument('-m', '--merged', help="vcf merged from GATK,Freebayes and Varscan2")
-	parser.add_argument('-a', '--amplicon',help="Amplicon design", action='store_true')
+	parser.add_argument('-v', '--varscan',help="It enables varscan features extraction", action='store_true')	
+	parser.add_argument('--ieva',help="It enables ieva features extraction", action='store_true')
 	parser.add_argument('-o', '--out_path',help="path di output")
 	parser.add_argument('-G', '--gvcf_path',help="gvcf path")
 
@@ -1148,8 +1427,8 @@ def main():
 		os.mkdir(opts.out_path)
 	except:
 		pass
-	
 	samples = samples_name_extract(opts.merged)
+	
 	for sample in samples:
 		start_time = datetime.datetime.now()
 		variants=readline(opts.merged,sample,dict())

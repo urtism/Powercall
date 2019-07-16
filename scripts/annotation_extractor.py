@@ -135,7 +135,8 @@ def main():
         other = open(opts.other_transcripts,'w')
 
     tag_list = tags_extractor(opts.tag_list)
-    if opts.trs_list != None:
+    print 'trs list ' +opts.trs_list 
+    if opts.trs_list != None and opts.trs_list != '':
         transcrs = transcr_extractor(opts.trs_list)
     else:
         transcrs = []

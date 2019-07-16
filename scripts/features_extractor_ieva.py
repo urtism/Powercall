@@ -549,25 +549,24 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 			freebayes.lod = -1.0
 		
 		try:
-			freebayes.AF=freebayes.AO/freebayes.DP
+			freebayes.AF = freebayes.AO/freebayes.DP
 		except:
-			freebayes.AF
+			freebayes.AF = '.'
 
-		if opts.amplicon:
-			if min(freebayes.DP_r_TOT,freebayes.DP_f_TOT)/(freebayes.DP_r_TOT+freebayes.DP_f_TOT) >= 0.05:
-				freebayes.STRBIAS_TOT=1-stats.fisher_exact([[freebayes.RO_f_TOT, freebayes.RO_r_TOT], [freebayes.AO_f_TOT, freebayes.AO_r_TOT]])[1]
-			else:
-				freebayes.STRBIAS_TOT='.'
-		else:
-			if min(freebayes.DP_r_TOT,freebayes.DP_f_TOT)/(freebayes.DP_r_TOT+freebayes.DP_f_TOT) > 0:
-				freebayes.STRBIAS_TOT=1-stats.fisher_exact([[freebayes.RO_f_TOT, freebayes.RO_r_TOT], [freebayes.AO_f_TOT, freebayes.AO_r_TOT]])[1]
+		try:
+			freebayes.FS = -10*math.log10(stats.fisher_exact([[freebayes.RO_f_TOT, freebayes.RO_r_TOT], [freebayes.AO_f_TOT, freebayes.AO_r_TOT]])[1])
+		except:
+			freebayes.FS = '.'
 
-			else:
-				freebayes.STRBIAS_TOT='.'
+		symmetricalRatio  = ((freebayes.RO_f_TOT+1.0)*(freebayes.AO_r_TOT+1.0))/((freebayes.RO_r_TOT+1.0)*(freebayes.AO_f_TOT+1.0)) + ((freebayes.RO_r_TOT+1.0)*(freebayes.AO_f_TOT+1.0))/((freebayes.RO_f_TOT+1.0)*(freebayes.AO_r_TOT+1.0))
+ 		refRatio = min(freebayes.RO_f_TOT + 1.0, freebayes.RO_r_TOT + 1.0) / max(freebayes.RO_f_TOT + 1.0, freebayes.RO_r_TOT + 1.0)
+ 		altRatio = min(freebayes.AO_f_TOT + 1.0, freebayes.AO_r_TOT + 1.0) / max(freebayes.AO_f_TOT + 1.0, freebayes.AO_r_TOT + 1.0)
+		try:
+			freebayes.SOR = math.log(symmetricalRatio) + math.log(refRatio) – math.log(altRatio)
+		except:
+			freebayes.SOR='.'
 
-		freebayes.FILTER=filter
-		#print chrom,pos,ref,alt,freebayes.GT
-	
+		freebayes.FILTER=filter	
 		freebayes.Call=1
 	return freebayes
 
@@ -575,6 +574,7 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 	'''estrae le informazioni dal vcf di GATK'''
 	
 	GATK.GT=sample[format.index('GT')]
+
 	if GATK.GT=='./.':
 		pass
 	else:
@@ -612,7 +612,6 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 			GATK.DP_f='.'
 
 		GATK.QB=sample[format.index('SQD')]
-
 
 		for ind in info:
 			if ind.startswith("AC="):
@@ -657,22 +656,18 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 				GATK.SOR=ind.split('=')[1]
 
 		try:
-			if opts.amplicon:
-				if min(GATK.DP_r,GATK.DP_f)/(GATK.DP_r+GATK.DP_f) >= 0.05:
-					GATK.STRBIAS=1-stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1]
-				else:
-					GATK.STRBIAS='.'
-			else:
-				if min(GATK.DP_r,GATK.DP_f)/(GATK.DP_r+GATK.DP_f) > 0 or min(GATK.DP_r,GATK.DP_f)/(GATK.DP_r+GATK.DP_f) == 0 and GATK.GT=='1/1' :
-					GATK.STRBIAS=1-stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1]
-				else:
-					if GATK.DP_r > GATK.DP_f:
-						filter += ['AllRev']
-					elif GATK.DP_r < GATK.DP_f:
-						filter += ['AllFow']
-					GATK.STRBIAS='.'
+			GATK.STRBIAS = -10*math.log10(stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1])
 		except:
-			GATK.STRBIAS='.'
+			GATK.STRBIAS= '.'
+
+		symmetricalRatio  = ((GATK.RO_f+1.0)*(GATK.AO_r+1.0))/((GATK.RO_r+1.0)*(GATK.AO_f+1.0)) + ((GATK.RO_r+1.0)*(GATK.AO_f+1.0))/((GATK.RO_f+1.0)*(GATK.AO_r+1.0))
+ 		refRatio = min(GATK.RO_f + 1.0, GATK.RO_r + 1.0) / max(GATK.RO_f + 1.0, GATK.RO_r + 1.0)
+ 		altRatio = min(GATK.AO_f + 1.0, GATK.AO_r + 1.0) / max(GATK.AO_f + 1.0, GATK.AO_r + 1.0)
+
+		try:
+			GATK.STROR = math.log(symmetricalRatio) + math.log(refRatio) – math.log(altRatio)
+		except:
+			GATK.STROR='.'
 
 		try:
 			GATK.GQ=float(sample[format.index('GQ')])
@@ -733,20 +728,19 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 		except:
 			varscan.AF='.'
 
-		if opts.amplicon:
-			if min((varscan.DP_r),(varscan.DP_f))/(varscan.DP_r+varscan.DP_f) >= 0.05:
-				varscan.STRBIAS = 1-stats.fisher_exact([[varscan.RO_f, varscan.RO_r], [varscan.AO_f, varscan.AO_r]])[1]
-			else:
-			 	varscan.STRBIAS = '.'
-		else:
-			if min((varscan.DP_r),(varscan.DP_f))/(varscan.DP_r+varscan.DP_f) > 0 or min((varscan.DP_r),(varscan.DP_f))/(varscan.DP_r+varscan.DP_f) == 0 and  varscan.GT== '1/1':
-				varscan.STRBIAS = 1-stats.fisher_exact([[varscan.RO_f, varscan.RO_r], [varscan.AO_f, varscan.AO_r]])[1]
-			else:
-				if varscan.DP_r > varscan.DP_f:
-					filter += ['AllRev']
-				elif varscan.DP_r < varscan.DP_f:
-					filter += ['AllFow']
-				varscan.STRBIAS = '.'
+		try:
+			varscan.STRBIAS = -10*math.log10(stats.fisher_exact([[varscan.RO_f, varscan.RO_r], [varscan.AO_f, varscan.AO_r]])[1])
+		except:
+			varscan.STRBIAS= '.'
+
+		symmetricalRatio  = ((varscan.RO_f+1.0)*(varscan.AO_r+1.0))/((varscan.RO_r+1.0)*(varscan.AO_f+1.0)) + ((varscan.RO_r+1.0)*(varscan.AO_f+1.0))/((varscan.RO_f+1.0)*(varscan.AO_r+1.0))
+ 		refRatio = min(varscan.RO_f + 1.0, varscan.RO_r + 1.0) / max(varscan.RO_f + 1.0, varscan.RO_r + 1.0)
+ 		altRatio = min(varscan.AO_f + 1.0, varscan.AO_r + 1.0) / max(varscan.AO_f + 1.0, varscan.AO_r + 1.0)
+
+		try:
+			varscan.SOR = math.log(symmetricalRatio) + math.log(refRatio) – math.log(altRatio)
+		except:
+			varscan.SOR='.'
 
 		varscan.FILTER=filter
 		#print chrom,pos,ref,alt,varscan.GT
@@ -778,6 +772,7 @@ def set_features(variants):
 		features.AC_Freebayes=varc_array['F'].AC
 		features.AN_Freebayes=varc_array['F'].AN	
 		features.STRBIAS_TOT_Freebayes=varc_array['F'].STRBIAS_TOT
+		features.STROR_Freebayes=varc_array['F'].STROR
 
 		features.AO_f_TOT_Freebayes=varc_array['F'].AO_f_TOT
 		features.AO_r_TOT_Freebayes=varc_array['F'].AO_r_TOT
@@ -841,7 +836,7 @@ def set_features(variants):
 		features.FILTER_GATK=','.join(varc_array['G'].FILTER)
 		features.AC_GATK=varc_array['G'].AC
 		features.AN_GATK=varc_array['G'].AN
-		features.STRBIAS_TOT_GATK=varc_array['G'].STRBIAS_TOT
+		features.STROR_GATK=varc_array['G'].STROR
 
 		features.AF_TOT_GATK=varc_array['G'].AF_TOT
 		features.BaseQRankSum_GATK=varc_array['G'].BaseQRankSum
@@ -879,7 +874,7 @@ def set_features(variants):
 		features.FILTER_Varscan=','.join(varc_array['V'].FILTER)
 		features.AC_Varscan=varc_array['V'].AC
 		features.AN_Varscan=varc_array['V'].AN
-		features.STRBIAS_TOT_Varscan=varc_array['V'].STRBIAS_TOT
+		features.STROR_Varscan=varc_array['V'].STROR
 		features.SDP_Varscan=varc_array['V'].SDP
 
 		features.SimpleRepeat_iEVA = varc_array['ieva'].SimpleRepeat
@@ -921,15 +916,16 @@ def set_features(variants):
 		features.ClippedReadsAlt_iEVA = varc_array['ieva'].ClippedReadsAlt
 
 
-		vett_MBQ =[features.QB_GATK,features.QB_Freebayes,features.QB_Varscan]
-		vett_DP=[features.DP_GATK,features.DP_Freebayes,features.DP_Varscan]
-		vett_AO=[features.AO_GATK,features.AO_Freebayes,features.AO_Varscan]
-		vett_RO=[features.RO_GATK,features.RO_Freebayes,features.RO_Varscan]
-		vett_AC=[features.AC_GATK,features.AC_Freebayes,features.AC_Varscan]
-		vett_AN=[features.AN_GATK,features.AN_Freebayes,features.AN_Varscan]
-		vett_RF_mean=[features.RF_GATK,features.RF_Freebayes,features.RF_Varscan]
-		vett_AF_mean=[features.AF_GATK,features.AF_Freebayes,features.AF_Varscan]
-		vett_STRB_mean=[features.STRBIAS_GATK,features.STRBIAS_Freebayes,features.STRBIAS_Varscan]
+		vett_MBQ = [features.QB_GATK,features.QB_Freebayes,features.QB_Varscan]
+		vett_DP = [features.DP_GATK,features.DP_Freebayes,features.DP_Varscan]
+		vett_AO = [features.AO_GATK,features.AO_Freebayes,features.AO_Varscan]
+		vett_RO = [features.RO_GATK,features.RO_Freebayes,features.RO_Varscan]
+		vett_AC = [features.AC_GATK,features.AC_Freebayes,features.AC_Varscan]
+		vett_AN = [features.AN_GATK,features.AN_Freebayes,features.AN_Varscan]
+		vett_RF_mean = [features.RF_GATK,features.RF_Freebayes,features.RF_Varscan]
+		vett_AF_mean = [features.AF_GATK,features.AF_Freebayes,features.AF_Varscan]
+		vett_STRB_mean = [features.STRBIAS_GATK,features.STRBIAS_Freebayes,features.STRBIAS_Varscan]
+		vett_SOR_mean = [features.STROR_GATK,features.STROR_Freebayes,features.STROR_Varscan]
 		
 		AF_mean=0
 		SB_mean=0
@@ -1075,17 +1071,67 @@ def set_features(variants):
 			features.RF_median='.'
 
 		v=[]
+		for mq in [features.MQ_GATK,features.MQ_A_Freebayes]:
+			if mq != '' and mq is not '.':
+				v=v+[float(mq)]
+		try:
+			features.MQ_mean=round(statistics.mean(v),3)
+		except:
+			features.MQ_mean='.'
+		try:
+			features.MQ_median=round(statistics.median(v),3)
+		except:
+			features.MQ_median='.'
+
+		v=[]
+		for SOR in vett_SOR_mean:
+			if SOR != '' and SOR is not '.':
+				v=v+[float(SOR)]
+		try:
+			features.SOR_mean=round(statistics.mean(v),3)
+		except:
+			features.SOR_mean='.'
+		try:
+			features.SOR_median=round(statistics.median(v),3)
+		except:
+			features.SOR_median='.'
+
+		v=[]
 		for f in [features.FILTER_GATK,features.FILTER_Freebayes,features.FILTER_Varscan]:
 			if f != '' and f != '.':
 				if f not in v:
 					v += [f]
 		if v == []:
 			v=['.']
+
+		features.FILTER += set_filters(features)
+
 		features.FILTER = ';'.join(v)
 
 		variants[var]['features']= features
 
 
+def set_filters(features):
+
+	filters = []
+	if features.GT_GATK == './.' and features.GT_Freebayes == '0/0' or
+		 features.GT_GATK == '0/0' and features.GT_Freebayes == './.' or
+		 	 features.GT_GATK == '0/0' and features.GT_Freebayes == '0/0':
+		 	 	filters += ['PROB-WT']
+	if features.AO_mean < 20.0:
+		filters += ['LOW-AD']
+	if features.AF_mean > 0.20:
+		filters += ['LOW-FREQ']
+	if features.MQ_mean < 40.0:
+		filters += ['LOW-MAPQUAL']
+	if features.MBQ_mean < 2.0:
+		filters += ['LOW-BASEQUAL']
+	if features.FS_mean > 60.0:
+		filters += ['HIGH-FS']
+	if features.SOR_mean > 3.0:
+		filters += ['HIGH-SOR']
+
+	return filters
 
 def split_format(format,sformat):
 	G_format = []
@@ -1352,6 +1398,7 @@ def main():
 		start_time = datetime.datetime.now()
 		variants=readline(opts.merged,sample,dict())
 		set_features(variants)
+		set_filters(variants)
 		control(variants)
 		print_var(variants,opts.out_path,sample)
 		elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
