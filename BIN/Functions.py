@@ -9,19 +9,10 @@ import datetime
 import pysam
 import random as r
 import regex as re
-from contextlib import contextmanager
 
 def prRed(prt): print("\033[91m {}\033[00m" .format(prt))
 def prGreen(prt): print("\033[92m {}\033[00m" .format(prt))
 
-@contextmanager
-def working_directory(directory):
-    owd = os.getcwd()
-    try:
-        os.chdir(directory)
-        yield directory
-    finally:
-        os.chdir(owd)
 
 def init_dirs(work_dir,opts):
 
@@ -69,7 +60,7 @@ def panel_check(panel,cfg):
 		target_bed = cfg['target']['TARGET_TRUSIGHTCANCER_BED']
 		transcripts_list = cfg['files']['TRANSCR_TRUSIGHTCANCER']
 		cnv_target_list = cfg['CNV']['CNV_TARGET_TRUSIGHTCANCER_LIST']
-		cnv_target_bed = cfg['CNV']['CNV_TARGET_TRUSIGHTCANCER_BED']
+		cnv_target_bed = cfg['CNV']['CNV_TRUSIGHTCANCER_BED']
 		cnv_ref_ploidy = cfg['CNV']['CNV_REF_TRUSIGHTCANCER_PLOIDY']
 		cnv_ref_calls = cfg['CNV']['CNV_REF_TRUSIGHTCANCER_CALLS']
 
@@ -295,9 +286,8 @@ def Copy(files,newdir):
 		if os.path.isfile(f): 
 			status = subprocess.call("cp " + f + ' ' + newdir, shell=True)
 		else:
-			print f + ": error in coping file(s)"
+			print files
 
 def Conda(arg):
-	print arg
-	status = subprocess.call(['/bin/bash', '-i', '-c', "conda", arg],shell=True)
-	print status
+	status = subprocess.call("conda activate", shell=True)
+	status = subprocess.call("conda " + arg, shell=True)

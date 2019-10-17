@@ -534,6 +534,8 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 	 		refRatio = min(freebayes.RO_f_TOT, freebayes.RO_r_TOT) / max(freebayes.RO_f_TOT, freebayes.RO_r_TOT)
 	 		altRatio = min(freebayes.AO_f_TOT, freebayes.AO_r_TOT) / max(freebayes.AO_f_TOT, freebayes.AO_r_TOT)
 			freebayes.STROR = math.log(symmetricalRatio) + math.log(refRatio) - math.log(altRatio)
+			if freebayes.GT == '1/1' or freebayes.GT == '1|1':
+				freebayes.STROR='.'
 		except:
 			freebayes.STROR='.'
 
@@ -642,6 +644,8 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 	 		refRatio = min(GATK.RO_f + 1.0, GATK.RO_r + 1.0) / max(GATK.RO_f + 1.0, GATK.RO_r + 1.0)
 	 		altRatio = min(GATK.AO_f + 1.0, GATK.AO_r + 1.0) / max(GATK.AO_f + 1.0, GATK.AO_r + 1.0)
 			GATK.STROR = math.log(symmetricalRatio) + math.log(refRatio) - math.log(altRatio)
+			if GATK.GT == '1/1' or GATK.GT == '1|1':
+				GATK.STROR='.'
 		except:
 			GATK.STROR='.'
 
@@ -1125,15 +1129,15 @@ def set_filters(features):
 		 	 	filters += ['PROB-WT']
 	if features.AO_mean < 20.0:
 		filters += ['LOW-AD']
-	if features.AF_mean < 0.20:
+	if features.AF_mean < 0.30:
 		filters += ['LOW-FREQ']
 	if features.MQ_mean < 40.0:
 		filters += ['LOW-MAPQUAL']
-	if features.MBQ_mean < 2.0:
+	if features.MBQ_mean < 20.0:
 		filters += ['LOW-BASEQUAL']
 	if features.STRBIAS_mean > 60.0:
 		filters += ['HIGH-FS']
-	if features.SOR_mean > 3.0:
+	if features.SOR_mean != '.' and features.SOR_mean > 3.0:
 		filters += ['HIGH-SOR']
 
 	return filters

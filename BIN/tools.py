@@ -554,9 +554,6 @@ def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,referen
 
 ###------------------------------------------------------------------------------------------COPY NUMBER CALLING------------------------------------------------------------------------------------------
 
-
-#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     GATK     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
 def GATK_CollectReadCounts(path,ram,bam,sample_name,target_list,log,workdir):
 	
 	success = False
@@ -565,7 +562,7 @@ def GATK_CollectReadCounts(path,ram,bam,sample_name,target_list,log,workdir):
 	if version.startswith('4.1'):
 		args = [path, 'CollectReadCounts', '-I', bam, '-L', target_list, '--interval-merging-rule', 'OVERLAPPING_ONLY', '-O', hdf5]
 		success = subprocess.call(args,stdout=log,stderr=log)
-		subprocess.call(['/bin/bash', '-i', '-c', "conda deactivate"])
+
 	if not success:
 		#print "- Estraction: %d min, %d sec" % elapsed_time
 		return hdf5
@@ -574,23 +571,12 @@ def GATK_CollectReadCounts(path,ram,bam,sample_name,target_list,log,workdir):
 		exit(1)
 
 def GATK_DetermineGermlineContigPloidy(path,ram,hdf5,sample_name,ploidy_model,log,workdir):
-
+	
 	success = False
 	out_dir = workdir + '/' + sample_name
 	version = check_version_gatk(path,log)
 	if version.startswith('4.1'):
-		
-
-		args = ['/bin/bash', '-c', "source ~/miniconda2/bin/activate gatk", '&&']
-		
-		args = [path, 'DetermineGermlineContigPloidy','--output-prefix', sample_name, '--model', ploidy_model, '--output', out_dir]
-		
-		if isinstance(hdf5, list):
-			for sample_hdf5, sample, index in hdf5: 
-				args += ['--input', sample_hdf5]
-		else:
-			args =+ ['--input', hdf5]
-
+		args = [path, 'DetermineGermlineContigPloidy', '--input', hdf5, '--output-prefix', sample_name, '--model', ploidy_model, '--output', out_dir]
 		success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
@@ -605,103 +591,36 @@ def GATK_GermlineCNVCaller(path,ram,hdf5,sample_name,sample_ploidy,calls_model,l
 	success = False
 	version = check_version_gatk(path,log)
 	if version.startswith('4.1'):
-
-		args = ['/bin/bash', '-c', "source ~/miniconda2/bin/activate gatk", '&&']
-		args = [path, 'GermlineCNVCaller', '--contig-ploidy-calls', sample_ploidy + '/'+ sample_name + '-calls', '--output', workdir, '--output-prefix', sample_name]
-		
-		if isinstance(hdf5, list):
-			for sample_hdf5, sample, index in hdf5: 
-				args += ['--input', sample_hdf5]
-		else:
-			args =+ ['--input', hdf5]
-		
-		if calls_model == "":
-			args += ['--run-mode', 'COHORT']
-		else:
-			args += ['--run-mode', 'CASE', '--model', calls_model]
-	
+		args = [path, 'GermlineCNVCaller', '--run-mode', 'CASE', '--contig-ploidy-calls', sample_ploidy + '/'+ sample_name + '-calls',
+			'--input', hdf5, '--model', calls_model, '--output', workdir, '--output-prefix', sample_name]
 		success = subprocess.call(args,stdout=log,stderr=log)
+		calls = workdir + '/' + sample_name + '-calls'
 
-	calls = workdir + '/' + sample_name + '-calls'
-	model = workdir + '/' + sample_name + '-model'
-
-	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
-		return calls, model
-	else:
-		f.prRed('Error in CNV calling. Check log file.')
-		exit(1)
-
-def GATK_PostprocessGermlineCNVCalls(path,ram,sample_name,index,sample_calls,sample_ploidy,calls_model,log,workdir):
-
-	intervals_vcf = workdir + '/' + sample_name + '.CNV.vcf'
-	segments_vcf = workdir + '/' + sample_name + '.segments.CNV.vcf'
-
-	name = sample_ploidy.split('/')[-1]
-
-	success = False
-	version = check_version_gatk(path,log)
-	if version.startswith('4.1'):
-
-		args = ['/bin/bash', '-c', "source ~/miniconda2/bin/activate gatk", '&&']
-		args = [path, 'PostprocessGermlineCNVCalls', '--calls-shard-path', sample_calls, '--model-shard-path', calls_model, '--contig-ploidy-calls', sample_ploidy + '/'+ name + '-calls',
-			'--autosomal-ref-copy-number', '2', '--output-genotyped-intervals', intervals_vcf, '--output-genotyped-segments', segments_vcf]
-
-		if index is None:
-			args += ['--sample-index', '0']
-		else:
-			args += ['--sample-index', str(index)]
-
-		success = subprocess.call(args,stdout=log,stderr=log)
-
-	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
-		return intervals_vcf,segments_vcf
-	else:
-		f.prRed('Error in CNV calling. Check log file.')
-		exit(1)
-
-#:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::     DECON     :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-def Decon_ReadInBams(path,bam_list,sample_name,target_bed,reference,log,workdir):
-	
-	out = workdir + '/' + sample_name
-
-	args = ['Rscript', './ReadInBams.R', '--bams', bam_list, '--bed', target_bed, '--fasta', reference, '--out', out]
-
-	success = subprocess.call(args,stdout=log,stderr=log)
-	rdata = out + '.RData'
-	#success = False
-	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
-		return rdata
-	else:
-		f.prRed('Error in DECON CNV calling. Check log file.')
-		exit(1)
-
-def Decon_IdentifyFailures(path,rdata,sample_name,reference,log,workdir):
-	
-	out = workdir + '/' + sample_name + '.IdentifyFailures'
-
-	args = ['Rscript', './IdentifyFailures.R', '--Rdata', rdata, '--mincorr', '0.97', '--mincov', '50', '--custom', 'fALSE','--out', out]
-	success = subprocess.call(args,stdout=log,stderr=log)
-
-def Decon_makeCNVcalls(path,rdata,sample_name,reference,log,workdir):
-
-	out = workdir + '/' + sample_name + '.CNV'
-	
-	args = ['Rscript', './makeCNVcalls.R', '--Rdata', rdata, '--transProb', '0.01', '--out', out]
-
-	success = subprocess.call(args,stdout=log,stderr=log)
-	calls = out + '_all.txt'
-	#success = False
 	if not success:
 		#print "- Estraction: %d min, %d sec" % elapsed_time
 		return calls
 	else:
-		f.prRed('Error in DECON CNV calling. Check log file.')
+		f.prRed('Error in CNV calling. Check log file.')
 		exit(1)
 
+def GATK_PostprocessGermlineCNVCalls(path,ram,sample_name,sample_calls,sample_ploidy,calls_model,log,workdir):
+
+	intervals_vcf = workdir + '/' + sample_name + '.CNV.vcf'
+	segments_vcf = workdir + '/' + sample_name + '.segments.CNV.vcf'
+
+	success = False
+	version = check_version_gatk(path,log)
+	if version.startswith('4.1'):
+		args = [path, 'PostprocessGermlineCNVCalls', '--calls-shard-path', sample_calls, '--model-shard-path', calls_model, '--contig-ploidy-calls', sample_ploidy + '/'+ sample_name + '-calls',
+			'--sample-index', '0', '--autosomal-ref-copy-number', '2', '--output-genotyped-intervals', intervals_vcf, '--output-genotyped-segments', segments_vcf]
+		success = subprocess.call(args,stdout=log,stderr=log)
+
+	if not success:
+		#print "- Estraction: %d min, %d sec" % elapsed_time
+		return intervals_vcf
+	else:
+		f.prRed('Error in CNV calling. Check log file.')
+		exit(1)
 ###------------------------------------------------------------------------------------------FILTERING------------------------------------------------------------------------------------------
 
 def HardFilter(path,ram,vcf,sample_name,reference,target,log,workdir):

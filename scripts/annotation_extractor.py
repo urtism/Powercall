@@ -1,5 +1,6 @@
 import argparse
 import re
+import numpy
 
 def estrai_annotazione():
     vcf = open(opts.vcf,'r')
@@ -92,9 +93,11 @@ def transcr_extractor(transcr_list):
 
 def split_annotation(anninfo,header,transcrs):
     ann_array = [[],[],[]]
+    #print transcrs
     for ann in anninfo.split(','):
         ann_split = ann.split('|')
         tr = ann_split[header.index('Feature')].split('.')[0]
+        #print tr
         if tr in transcrs:
             #print tr
             ann_array[0] = ann_split
@@ -105,10 +108,227 @@ def split_annotation(anninfo,header,transcrs):
         ann_array[2] += [ann_split]
 
     if ann_array[0] == []:
-        ann_array[0] = ann_array[2][0]
+        if ann_array[1] == []:
+            ann_array[0] = ann_array[2][0]
+        else:
+            ann_array[0] = ann_array[1]
 
     return ann_array
     
+def tag_modifier(trs,tag,header):
+
+    if tag == 'SIFT4G':
+        try:
+            SIFT4G_scores = trs[header.index('SIFT4G_score')].split('&')  
+            while '.' in SIFT4G_scores: SIFT4G_scores.remove('.')
+            argmax = numpy.argmin(SIFT4G_scores)
+            SIFT4G_preds = trs[header.index('SIFT4G_pred')].split('&')
+            while '.' in SIFT4G_preds: SIFT4G_preds.remove('.')   
+            if SIFT4G_preds[argmax] == 'T':
+                SIFT4G_pred = 'tolerated'
+            elif SIFT4G_preds[argmax] == 'D':
+                SIFT4G_pred = 'deleterious'
+            else:
+                SIFT4G_pred = ''
+            tag = SIFT4G_pred + '(' +SIFT4G_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+            print tag
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'Polyphen2_HDIV':
+        try:
+            Polyphen2_HDIV_scores = trs[header.index('Polyphen2_HDIV_score')].split('&')  
+            while '.' in Polyphen2_HDIV_scores: Polyphen2_HDIV_scores.remove('.')
+            argmax = numpy.argmax(Polyphen2_HDIV_scores)
+            Polyphen2_HDIV_preds = trs[header.index('Polyphen2_HDIV_pred')].split('&')
+            while '.' in Polyphen2_HDIV_preds: Polyphen2_HDIV_preds.remove('.')   
+            if Polyphen2_HDIV_preds[argmax] == 'P':
+                Polyphen2_HDIV_pred = 'possibly_damaging'
+            elif Polyphen2_HDIV_preds[argmax] == 'D':
+                Polyphen2_HDIV_pred = 'probably_damaging'
+            elif Polyphen2_HDIV_preds[argmax] == 'B':
+                Polyphen2_HDIV_pred = 'benign'
+            else:
+                Polyphen2_HDIV_pred = ''
+            tag = Polyphen2_HDIV_pred + '(' +Polyphen2_HDIV_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+            print tag
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'Polyphen2_HVAR':
+        try:
+            Polyphen2_HVAR_scores = trs[header.index('Polyphen2_HVAR_score')].split('&')  
+            while '.' in Polyphen2_HVAR_scores: Polyphen2_HVAR_scores.remove('.')
+            argmax = numpy.argmax(Polyphen2_HVAR_scores)
+            Polyphen2_HVAR_preds = trs[header.index('Polyphen2_HVAR_pred')].split('&')
+            while '.' in Polyphen2_HVAR_preds: Polyphen2_HVAR_preds.remove('.')   
+            if Polyphen2_HVAR_preds[argmax] == 'P':
+                Polyphen2_HVAR_pred = 'possibly_damaging'
+            elif Polyphen2_HVAR_preds[argmax] == 'D':
+                Polyphen2_HVAR_pred = 'probably_damaging'
+            elif Polyphen2_HVAR_preds[argmax] == 'B':
+                Polyphen2_HVAR_pred = 'benign'
+            else:
+                Polyphen2_HVAR_pred = ''
+            tag = Polyphen2_HVAR_pred + '(' +Polyphen2_HVAR_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'MaxEntScan':
+        try:
+           MaxEntScan_alt = float(trs[header.index('MaxEntScan_alt')])
+           MaxEntScan_ref = float(trs[header.index('MaxEntScan_ref')])
+           MaxEntScan_diff = float(trs[header.index('MaxEntScan_diff')])
+           tag = str(round(MaxEntScan_diff / max(MaxEntScan_alt, MaxEntScan_ref),3)) + '(' + str(MaxEntScan_ref) + '|' + str(MaxEntScan_alt)+')' 
+
+        except Exception as e:
+            print(e)
+            tag = '.'
+
+    if tag == 'LRT':
+        LRT_pred = trs[header.index('LRT_pred')]
+        if LRT_pred == 'D':
+            tag = 'Damaging'
+        elif LRT_pred == 'N':
+            tag = 'Neutral'
+        elif LRT_pred == 'U':
+            tag = 'Unknown'
+        else:
+            tag = '.'
+    
+    if tag == 'MutationTaster':
+        try:
+            MutationTaster_scores = trs[header.index('MutationTaster_score')].split('&')  
+            while '.' in MutationTaster_scores: MutationTaster_scores.remove('.')
+            argmax = numpy.argmax(MutationTaster_scores)
+            MutationTaster_preds = trs[header.index('MutationTaster_pred')].split('&')
+            while '.' in MutationTaster_preds: MutationTaster_preds.remove('.')   
+            if MutationTaster_preds[argmax] == 'A' or MutationTaster_preds[argmax] == 'D':
+                MutationTaster_pred = 'Disease Causing'
+            elif MutationTaster_preds[argmax] == 'N' or MutationTaster_preds[argmax] == 'P':
+                MutationTaster_pred = 'Polymorphism'
+            else:
+                MutationTaster_pred = ''
+            tag = MutationTaster_pred + '(' +MutationTaster_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'MutationAssessor':
+        try:
+            MutationAssessor_scores = trs[header.index('MutationAssessor_score')].split('&')  
+            while '.' in MutationAssessor_scores: MutationAssessor_scores.remove('.')
+            argmax = numpy.argmax(MutationAssessor_scores)
+            MutationAssessor_preds = trs[header.index('MutationAssessor_pred')].split('&')
+            while '.' in MutationAssessor_preds: MutationAssessor_preds.remove('.')   
+            if MutationAssessor_preds[argmax] == 'H':
+                MutationAssessor_pred = 'High'
+            elif MutationAssessor_preds[argmax] == 'M':
+                MutationAssessor_pred = 'Medium'
+            elif MutationAssessor_preds[argmax] == 'L' or MutationAssessor_preds[argmax] == 'N' :
+                MutationAssessor_pred = 'Low'
+            else:
+                MutationAssessor_pred = ''
+            tag = MutationAssessor_pred + '(' +MutationAssessor_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+    
+    if tag == 'FATHMM':
+        try:
+            FATHMM_scores = trs[header.index('FATHMM_score')].split('&')  
+            while '.' in FATHMM_scores: FATHMM_scores.remove('.')
+            argmax = numpy.argmax(FATHMM_scores)
+            FATHMM_preds = trs[header.index('FATHMM_pred')].split('&')
+            while '.' in FATHMM_preds: FATHMM_preds.remove('.')   
+            if FATHMM_preds[argmax] == 'D':
+                FATHMM_pred = 'Damaging'
+            elif FATHMM_preds[argmax] == 'T':
+                FATHMM_pred = 'Tolerated'
+            else:
+                FATHMM_pred = ''
+            tag = FATHMM_pred + '(' +FATHMM_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'FATHMM-XF':
+        try:
+            fathmm_XF_coding_scores = trs[header.index('fathmm-XF_coding_score')].split('&')
+            while '.' in fathmm_XF_coding_scores: fathmm_XF_coding_scores.remove('.')
+            argmax = numpy.argmax(fathmm_XF_coding_scores)
+            fathmm_XF_coding_preds = trs[header.index('fathmm-XF_coding_pred')].split('&')
+            while '.' in fathmm_XF_coding_preds: fathmm_XF_coding_preds.remove('.')   
+            if fathmm_XF_coding_preds[argmax] == 'D':
+                fathmm_XF_coding_pred = 'Damaging'
+            elif fathmm_XF_coding_preds[argmax] == 'N':
+                fathmm_XF_coding_pred = 'Tolerated'
+            else:
+                fathmm_XF_coding_pred = ''
+            tag = fathmm_XF_coding_pred + '(' +str(round(float(fathmm_XF_coding_scores[argmax]),3)) + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'PROVEAN':
+        try:
+            PROVEAN_scores = trs[header.index('PROVEAN_score')].split('&')
+            while '.' in PROVEAN_scores: PROVEAN_scores.remove('.')
+            argmax = numpy.argmin(PROVEAN_scores)
+            PROVEAN_preds = trs[header.index('PROVEAN_pred')].split('&')
+            while '.' in PROVEAN_preds: PROVEAN_preds.remove('.')   
+            if PROVEAN_preds[argmax] == 'D':
+                PROVEAN_pred = 'Damaging'
+            elif PROVEAN_preds[argmax] == 'N':
+                PROVEAN_pred = 'Neutral'
+            else:
+                PROVEAN_pred = ''
+            tag = PROVEAN_pred + '(' + PROVEAN_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'MetaSVM':
+        try:
+            MetaSVM_scores = trs[header.index('MetaSVM_score')].split('&')
+            while '.' in MetaSVM_scores: MetaSVM_scores.remove('.')
+            argmax = numpy.argmin(MetaSVM_scores)
+            MetaSVM_preds = trs[header.index('MetaSVM_pred')].split('&')
+            while '.' in MetaSVM_preds: MetaSVM_preds.remove('.')   
+            if MetaSVM_preds[argmax] == 'D':
+                MetaSVM_pred = 'Damaging'
+            elif MetaSVM_preds[argmax] == 'T':
+                MetaSVM_pred = 'Tolerated'
+            else:
+                MetaSVM_pred = ''
+            tag = MetaSVM_pred + '(' + MetaSVM_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    if tag == 'M-CAP':
+        try:
+            M_CAP_scores = trs[header.index('M-CAP_score')].split('&')
+            while '.' in M_CAP_scores: M_CAP_scores.remove('.')
+            argmax = numpy.argmin(M_CAP_scores)
+            M_CAP_preds = trs[header.index('M-CAP_pred')].split('&')
+            while '.' in M_CAP_preds: M_CAP_preds.remove('.')   
+            if M_CAP_preds[argmax] == 'D':
+                M_CAP_pred = 'Damaging'
+            elif M_CAP_preds[argmax] == 'T':
+                M_CAP_pred = 'Tolerated'
+            else:
+                M_CAP_pred = ''
+            tag = M_CAP_pred + '(' + M_CAP_scores[argmax] + ')'
+            if tag == '()': tag = '.'
+        except Exception as e:
+            tag = '.'
+
+    return tag
+
 
 
 def main():
@@ -135,7 +355,7 @@ def main():
         other = open(opts.other_transcripts,'w')
 
     tag_list = tags_extractor(opts.tag_list)
-    print 'trs list ' +opts.trs_list 
+    #print 'trs list ' +opts.trs_list 
     if opts.trs_list != None and opts.trs_list != '':
         transcrs = transcr_extractor(opts.trs_list)
     else:
@@ -167,6 +387,8 @@ def main():
             end = line.find('">')
             header_ann = (line[start:end]).split('|')
             header_tot = header.split('\t') + tag_list
+            if 'AF' in header_tot:
+                header_tot[header_tot.index('AF')] = '1000G_AF'
             out.write('\t'.join(header_tot)+'\n')
             try:
                 other.write('\t'.join(header_tot)+'\n')
@@ -194,15 +416,17 @@ def main():
                 
                 if opts.trs_list != None:
                     main_trs = annotations[0]
+                    #print main_trs
                     other_trs = annotations[1] + annotations[2]
                 else:
                     main_trs = annotations[1]
                 
                 for tag in tag_list:
-                    try:           
+                    try:     
                         new_tag = main_trs[header_ann.index(tag)]
                     except:
-                        print var_id,annotations
+                        #print var_id,annotations
+                        new_tag = tag_modifier(main_trs,tag,header_ann)
                     if new_tag == '':
                         new_tag = '.'
                     tags = tags + [new_tag]

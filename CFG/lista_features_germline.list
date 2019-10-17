@@ -59,7 +59,7 @@ MQ_mean
 #DS_GATK
 #END_GATK
 #ExcessHet_GATK
-FS_GATK
+#FS_GATK
 #HaplotypeScore_GATK
 #InbreedingCoeff_GATK
 #MLEAC_GATK

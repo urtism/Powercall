@@ -1118,13 +1118,13 @@ def set_filters(features):
 		 features.GT_GATK == '0/0' and features.GT_Freebayes == './.' or
 		 	 features.GT_GATK == '0/0' and features.GT_Freebayes == '0/0':
 		 	 	filters += ['PROB-WT']
-	if features.AO_mean < 20.0:
+	if features.AO_mean < 3.0:
 		filters += ['LOW-AD']
 	if features.AF_mean > 0.20:
 		filters += ['LOW-FREQ']
 	if features.MQ_mean < 40.0:
 		filters += ['LOW-MAPQUAL']
-	if features.MBQ_mean < 2.0:
+	if features.MBQ_mean < 20.0:
 		filters += ['LOW-BASEQUAL']
 	if features.FS_mean > 60.0:
 		filters += ['HIGH-FS']

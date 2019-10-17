@@ -225,7 +225,9 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 			storage_bai = dirs['storage'] + '/'+sample_name+'.bam.bai'
 			status = subprocess.call("cp " + bam + ' '+storage_bam , shell=True)
 			status = subprocess.call("cp " + bai + ' '+storage_bai , shell=True)
-			CNVsamplesheet.write('\t'.join([sample_name,storage_bam])+'\n')
+			CNVsamplesheet.write('\t'.join(sample_name,storage_bam))
+
+
 
 		f.Copy(to_ss,dirs['storage'])
 		new_samplesheet.write('\t'.join([name]+to_ss))
@@ -281,58 +283,31 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 				name = samp.split('/')[-1].split('.')[0]
 				out_tsv = tools.add_Annotation(dirs['script']+'annotation_extractor.py',name,annotated_vcf,samp,cfg['files']['ANN_LIST_GERMLINE'],transcripts_list,annotation_log,workdir)
 				f.Copy([out_tsv],dirs['storage'])
-		
-		samplesheet = dirs['log'] + '/CopyNumber.samplesheet'
 		pass
 
 	if 'C' in workflow:
 
 		print "\nCNV CALLING"
+
 		print "-GATK"
-		
-		#samplesheet = dirs['log'] + '/CopyNumber.samplesheet'
+		print "-DECoN"
+
+		samplesheet = dirs['log'] + '/CopyNumber.samplesheet'
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'CNV')
 		cnv_log = open(dirs['log'] + '/CopyNumber.log','w+')
-		name = opts.run_id
+
 		f.makedirs([dirs['CNV'], dirs['CNV_HDF5'],  dirs['CNV_PLOIDY'], dirs['CNV_CALLS']])
 		workdir = dirs['CNV']
-		bam_list = workdir+'/bams.list'
-		bam_l = open(bam_list,'w+')
-		sample_index = 0
-		hdf5_array = []
+		#f.Conda('activate gatk')
 		for sample in samples.keys():
 			sample_name,bam = samples[sample][0]
+
 			hdf5 = tools.GATK_CollectReadCounts(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],bam,sample_name,cnv_target_list,cnv_log,dirs['CNV_HDF5'])
-			hdf5_array += [[hdf5,sample_name,sample_index]]
-			f.Copy([hdf5],dirs['storage'])
-			bam_l.write(bam+'\n')
-			sample_index += 1
-		
-		bam_l.close()
+			sample_ploidy = tools.GATK_DetermineGermlineContigPloidy(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],hdf5,sample_name,cnv_ref_ploidy,cnv_log,dirs['CNV_PLOIDY'])
+			sample_calls = tools.GATK_GermlineCNVCaller(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],hdf5,sample_name,sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV_CALLS'])
+			cnv_vcf = tools.GATK_PostprocessGermlineCNVCalls(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],sample_name,sample_calls,sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV'])
+		f.Conda('dectivate')
 
-		print hdf5_array
-
-		if cnv_ref_ploidy == "":
-			cnv_ref_ploidy = os.path.dirname(os.path.abspath(__file__)) + '/FILES/Prior.ploidy'
-
-		GATK_sample_ploidy = tools.GATK_DetermineGermlineContigPloidy(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],hdf5_array,name,cnv_ref_ploidy,cnv_log,dirs['CNV_PLOIDY'])
-		GATK_sample_calls, GATK_sample_model = tools.GATK_GermlineCNVCaller(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],hdf5_array,name,GATK_sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV_CALLS'])
-
-		if cnv_ref_calls == "":
-			cnv_ref_calls = GATK_sample_calls
-
-		for hdf5,sample_name,sample_index in hdf5_array:
-			cnv_vcf,intervals_vcf = tools.GATK_PostprocessGermlineCNVCalls(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],sample_name,sample_index,GATK_sample_calls,GATK_sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV'])
-			f.Copy([cnv_vcf,intervals_vcf],dirs['storage'])
-			f.Copy([cnv_vcf,intervals_vcf],dirs['out'])
-			
-		print "-DECoN"
-		with f.working_directory(cfg['variantcaller']['DECON']['path']):
-			rdata = tools.Decon_ReadInBams(cfg['variantcaller']['DECON']['path'],bam_list,name,cnv_target_bed,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
-			tools.Decon_IdentifyFailures(cfg['variantcaller']['GATK']['path'],rdata,name,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
-			decon_calls = tools.Decon_makeCNVcalls(cfg['variantcaller']['GATK']['path'],rdata,name,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
-			f.Copy([decon_calls],dirs['storage'])
-			f.Copy([decon_calls],dirs['out'])
 
 def Pipeline_Germline_Singlesample(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls):
 
