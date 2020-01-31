@@ -43,6 +43,7 @@ def init_dirs(work_dir,opts):
 	dirs['CNV_CALLS'] = dirs['CNV'] + '/CALLS'
 	dirs['script'] = os.path.dirname(os.path.abspath(__file__)) + '/scripts/'
 	dirs['logo'] = os.path.dirname(os.path.abspath(__file__)) + '/LOGOS'
+	dirs['files'] = os.path.dirname(os.path.abspath(__file__)) + '/FILES'
 	
 	return dirs
 
@@ -103,15 +104,15 @@ def panel_check(panel,cfg):
 		cnv_ref_ploidy = cfg['CNV']['CNV_REF_ALPORT_PLOIDY']
 		cnv_ref_calls = cfg['CNV']['CNV_REF_ALPORT_CALLS']
 
-	elif panel == 'HTC':
+	elif panel == 'HCS':
 		design = 'Enrichment'
-		target_list = cfg['target']['TARGET_HTC_SOPHIA_LIST']
-		target_bed = cfg['target']['TARGET_HTC_SOPHIA_BED']
-		transcripts_list = cfg['files']['TRANSCR_HTC_SOPHIA']
-		cnv_target_list = cfg['CNV']['CNV_TARGET_HTC_LIST']
-		cnv_target_bed = cfg['CNV']['CNV_HTC_BED']
-		cnv_ref_ploidy = cfg['CNV']['CNV_REF_HTC_PLOIDY']
-		cnv_ref_calls = cfg['CNV']['CNV_REF_HTC_CALLS']
+		target_list = cfg['target']['TARGET_HCS_LIST']
+		target_bed = cfg['target']['TARGET_HCS_BED']
+		transcripts_list = cfg['files']['TRANSCR_HCS']
+		cnv_target_list = cfg['CNV']['CNV_TARGET_HCS_LIST']
+		cnv_target_bed = cfg['CNV']['CNV_HCS_BED']
+		cnv_ref_ploidy = cfg['CNV']['CNV_REF_HCS_PLOIDY']
+		cnv_ref_calls = cfg['CNV']['CNV_REF_HCS_CALLS']
 
 	elif panel == 'CustomSSQXT':
 		design = 'Enrichment'
@@ -134,7 +135,7 @@ def panel_check(panel,cfg):
 		cnv_ref_calls = cfg['CNV']['CNV_REF_HALOPLEX_CALLS']
 
 	elif panel == 'Custom':
-		design = opts.design
+		design = 'Enrichment'
 		target_list = cfg['target']['TARGET_CUSTOM_LIST']
 		target_bed = cfg['target']['TARGET_CUSTOM_BED']
 		transcripts_list = cfg['files']['TRANSCR_CUSTOM']
@@ -295,9 +296,9 @@ def Copy(files,newdir):
 		if os.path.isfile(f): 
 			status = subprocess.call("cp " + f + ' ' + newdir, shell=True)
 		else:
-			print f + ": error in coping file(s)"
+			print(f + ": error in coping file(s)")
 
 def Conda(arg):
-	print arg
+	print(arg)
 	status = subprocess.call(['/bin/bash', '-i', '-c', "conda", arg],shell=True)
-	print status
+	print(status)

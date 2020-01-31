@@ -393,14 +393,13 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 		freebayes.GT='./.'
 	if freebayes.GT=='./.' or alt =='*':
 		pass
-		#print chrom,pos,ref,alt,freebayes.GT
 	else:
 		freebayes.GQ=sample[format.index('GQ')]
 		freebayes.AO=float(sample[format.index('AO')])
 		try:
 			freebayes.RO=float(sample[format.index('RO')])
 		except:
-			print chrom,pos,sample
+			print(chrom,pos,sample)
 		#freebayes.DP=freebayes.AO+freebayes.RO
 		freebayes.DP=float(sample[format.index('DP')])
 
@@ -558,7 +557,6 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 		except:
 			GATK.DP=0.0
 			pass
-			#print chrom,pos,ref,alt,'erroreeeeeeeee'
 		try:
 			GATK.RF=(GATK.AO+GATK.RO)/GATK.DP
 		except:
@@ -574,7 +572,6 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 			GATK.AO_f=float((sample[format.index('SB')]).split(',')[2])
 			GATK.RO_r=float((sample[format.index('SB')]).split(',')[1])
 			GATK.RO_f=float((sample[format.index('SB')]).split(',')[0])
-			#print chrom,pos,GATK.AO_r
 
 			GATK.DP_r=GATK.AO_r+GATK.RO_r
 			GATK.DP_f=GATK.AO_f+GATK.RO_f
@@ -635,7 +632,6 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 				GATK.STRBIAS = 0
 			else:
 				GATK.STRBIAS = -10*math.log10(stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1])
-			#print stats.fisher_exact([[GATK.RO_f, GATK.RO_r], [GATK.AO_f, GATK.AO_r]])[1]
 		except:
 			GATK.STRBIAS= '.'
 
@@ -663,7 +659,6 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 	
 	varscan.GT=sample[format.index('GT')]
 	if varscan.GT== './.' or alt == '*':
-		#print chrom,pos,ref,alt,varscan.GT
 		pass
 	else:
 		varscan.AO=float(sample[format.index('AD')])
@@ -725,7 +720,6 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 			varscan.SOR='.'
 
 		varscan.FILTER=filter
-		#print chrom,pos,ref,alt,varscan.GT
 		varscan.Call=1
 	return varscan
 
@@ -1244,9 +1238,6 @@ def readline(file,sample,variants):
 				except:
 					[G_qual,F_qual] = qual.split(',')
 
-
-				#print G_filter,F_filter,V_filter
-
 				variants[IDvar] = dict()
 
 				variants[IDvar]['G'] = get_info_GATK(chrom,pos,ref,alt,G_filter,G_info,G_format,G_sample,GATK())
@@ -1256,12 +1247,9 @@ def readline(file,sample,variants):
 				#variants[IDvar]['I'] = get_info_Ieva(chrom,pos,ref,alt,I_filter,I_info,I_format,I_sample,Ieva())
 
 			except Exception:
-				print chrom,pos
+				print(chrom,pos)
 				raise
 			
-
-			#except:
-				#print sample +' is not present in vcf file.'
 	vcf.close()
 	return variants
 				
@@ -1349,7 +1337,7 @@ def split_vcf(vcf_dir,sample):
 			variant_caller = 'GATK'
 	elif 'VarScan' in vcf_name:
 			variant_caller = 'VarScan'
-	print '\n'+variant_caller +':'
+	print('\n'+variant_caller +':')
 	
 	for line in vcf:
 		line=line.rstrip()
@@ -1361,7 +1349,7 @@ def split_vcf(vcf_dir,sample):
 		 	varianti = varianti + [line]
 	i=0
 	for sample in samples:
-		print sample
+		print(sample)
 		try: 
 			os.mkdir(opts.out_path +'/' + sample)
 		except:
@@ -1396,13 +1384,11 @@ def addInfo_gvcf(chrom,pos,format,fsample,sample):
 			try:
 				sSB = gsample.split(':')[(gformat.split(':')).index('SB')]
 			except:
-				#print 'ci sono problemi',sample,chrom,pos,format,gsample
 				sSB = '.'
 
 			try:
 				sQD = round(float(qual)/ad_sum ,2)
 			except:
-				#print 'ci sono problemi',sample,chrom,pos,format,gsample
 				sQD = 0.0
 			break
 	format = format + ['SB_G','SQD_G']
@@ -1441,7 +1427,7 @@ def main():
 		print_var(variants,opts.out_path,sample)
 		elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 		samples_file.write(opts.out_path+'/'+sample+'.tsv\n')
-		print "- "+sample+": %d min, %d sec" % elapsed_time
+		print("- "+sample+": %d min, %d sec" % elapsed_time)
 	samples_file.close()
 
 main()

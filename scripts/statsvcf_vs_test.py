@@ -30,7 +30,6 @@ def main():
 			varid = '\t'.join([chr,pos,ref.upper(),alt.upper()])
 			gt = sample.split(':')[format.split(':').index('GT')]
 			if gt == '1/0':
-				print chr,pos
 				gt = '0/1'
 			varvcf[varid] = gt
 
@@ -51,7 +50,6 @@ def main():
 				sample = line.split('\t')[sampleindex]
 				gt = sample.split(':')[format.split(':').index('GT')]
 				if gt == '1/0':
-					print chr,pos
 					gt = '0/1'
 				varid = '\t'.join([chr,pos,ref.upper(),alt.upper()])
 				if varid in varvcf.keys():

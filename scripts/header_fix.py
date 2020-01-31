@@ -243,6 +243,6 @@ for line in read:
 				riga[riga.index(s)] = ':'.join(sample)
 			line='\t'.join(riga)
 
-	print line.rstrip()
+	print(line.rstrip())
 
 read.close()

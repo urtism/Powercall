@@ -18,12 +18,10 @@ def parse_header(vcf,i):
 	elif i==3:
 		add='V'
 
-	#print i,add
 	for line in vcf:
 		line=line.rstrip()
 		line_split=line.split(',')
 
-		#print line
 
 		if line.startswith('##FILTER'):
 			line_split[0]=line_split[0]+'_'+ add
@@ -37,7 +35,6 @@ def parse_header(vcf,i):
 			line_split[0]=line_split[0]+'_'+ add
 			h_format=h_format+','.join(line_split) + '\n'
 
-		#elif line.startswith('#CHROM') and i==1:
 
 	return h_filter,h_info,h_format
 
@@ -73,7 +70,6 @@ def estrai_varianti(varianti,vcf,i,sample_list):
 
 				if var in varianti.keys():
 					line_var=varianti.get(var)
-					#print line_var[2]
 				else:
 					if opts.varscan != None:
 						line_var=[['.','.','.','.','.'],['.','.','.','.','.'],['.','.','.','.','.']]
@@ -138,7 +134,6 @@ def fix_format_values(line_var,s_list,i,format):
 	null_format='./.'
 	if (line_var[i])[-1]=='.':
 		for a in format.split(':')[1:]:
-			#print a
 			null_format=null_format + ':.'
 		for s in s_list:
 			format_sample=format_sample + [null_format]
@@ -240,9 +235,6 @@ def main():
 			(line_var[2])[-1]=fix_format_values(line_var,sample_list_gatk,2,format_varscan)
 		except:
 			pass
-
-
-		#print (line_var[0])[-1],(line_var[1])[-1],(line_var[2])[-1]
 
 		format_sample=[]
 		for sample in sample_list_gatk:

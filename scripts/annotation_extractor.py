@@ -85,7 +85,6 @@ def transcr_extractor(transcr_list):
     transcr_l = open(transcr_list,'r')
     transcrs = []
     for transcr in transcr_l:
-        
         if not transcr.startswith('#'):
             transcrs += [transcr.rstrip()]
     transcr_l.close()
@@ -93,13 +92,10 @@ def transcr_extractor(transcr_list):
 
 def split_annotation(anninfo,header,transcrs):
     ann_array = [[],[],[]]
-    #print transcrs
     for ann in anninfo.split(','):
         ann_split = ann.split('|')
         tr = ann_split[header.index('Feature')].split('.')[0]
-        #print tr
         if tr in transcrs:
-            #print tr
             ann_array[0] = ann_split
 
         if ann_split[header.index('CANONICAL')]:
@@ -132,7 +128,6 @@ def tag_modifier(trs,tag,header):
                 SIFT4G_pred = ''
             tag = SIFT4G_pred + '(' +SIFT4G_scores[argmax] + ')'
             if tag == '()': tag = '.'
-            print tag
         except Exception as e:
             tag = '.'
 
@@ -153,7 +148,6 @@ def tag_modifier(trs,tag,header):
                 Polyphen2_HDIV_pred = ''
             tag = Polyphen2_HDIV_pred + '(' +Polyphen2_HDIV_scores[argmax] + ')'
             if tag == '()': tag = '.'
-            print tag
         except Exception as e:
             tag = '.'
 
@@ -355,7 +349,6 @@ def main():
         other = open(opts.other_transcripts,'w')
 
     tag_list = tags_extractor(opts.tag_list)
-    #print 'trs list ' +opts.trs_list 
     if opts.trs_list != None and opts.trs_list != '':
         transcrs = transcr_extractor(opts.trs_list)
     else:
@@ -416,7 +409,6 @@ def main():
                 
                 if opts.trs_list != None:
                     main_trs = annotations[0]
-                    #print main_trs
                     other_trs = annotations[1] + annotations[2]
                 else:
                     main_trs = annotations[1]
@@ -425,7 +417,6 @@ def main():
                     try:     
                         new_tag = main_trs[header_ann.index(tag)]
                     except:
-                        #print var_id,annotations
                         new_tag = tag_modifier(main_trs,tag,header_ann)
                     if new_tag == '':
                         new_tag = '.'

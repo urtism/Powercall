@@ -17,17 +17,17 @@ def Copy(files,newdir):
 		if os.path.isfile(f): 
 			status = subprocess.call("cp " + f + ' ' + newdir, shell=True)
 		else:
-			print files + ": error in coping file(s)"
+			print(files + ": error in coping file(s)")
 
 def GATK_CollectReadCounts(path,bam,sample_name,target_list,log,workdir):
 	
 	success = False
 	hdf5 = workdir + '/' +sample_name +'.hdf5'
-	args = [path, 'CollectReadCounts', '-I', bam, '-L', target_list, '--interval-merging-rule', 'OVERLAPPING_ONLY', '-O', hdf5]
-	success = subprocess.call(args,stdout=log,stderr=log)
+	if not os.path.isfile(hdf5):
+		args = [path, 'CollectReadCounts', '-I', bam, '-L', target_list, '--interval-merging-rule', 'OVERLAPPING_ONLY', '-O', hdf5]
+		success = subprocess.call(args,stdout=log,stderr=log)
 	#success = False
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
 		return hdf5
 	else:
 		prRed('Error in CNV calling. Check log file.')
@@ -49,12 +49,10 @@ def GATK_DetermineGermlineContigPloidy(path,hdf5,sample_name,ploidy_model,log,wo
 	success = subprocess.call(args,stdout=log,stderr=log)
 	#success = False
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
 		return out_dir
 	else:
 		prRed('Error in CNV calling. Check log file.')
 		exit(1)
-
 
 
 def GATK_GermlineCNVCaller(path,hdf5,sample_name,sample_ploidy,log,workdir):
@@ -75,7 +73,6 @@ def GATK_GermlineCNVCaller(path,hdf5,sample_name,sample_ploidy,log,workdir):
 	model = workdir + '/' + sample_name + '-model'
 	#success = False
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
 		return calls, model
 	else:
 		prRed('Error in CNV calling. Check log file.')
@@ -85,7 +82,6 @@ def GATK_GermlineCNVCaller(path,hdf5,sample_name,sample_ploidy,log,workdir):
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser('this script generates PLOIDY model for the gatk cnv caller')
-
 	parser.add_argument('-t', '--target', help="target list file")
 	parser.add_argument('-l', '--bam_list', help="List of bam")
 	parser.add_argument('--hdf5_list', help="List of hdf5 files")
@@ -109,6 +105,7 @@ if __name__ == '__main__':
 	hdf5_array = []
 	name = opts.name
 	ploidy_model = opts.ploidy_model
+	bam_list = []
 	
 	if opts.bam_list != None:
 		bam_list = [a.rstrip() for a in open(opts.bam_list ,'r').readlines()]
@@ -118,7 +115,6 @@ if __name__ == '__main__':
 		sample_list = [a.rstrip() for a in open(opts.sample_list,'r').readlines()]
 		for bam in bam_list:
 			sample_name = bam.split('/')[-1].split('.')[0]
-			#print sample_name
 			if sample_name in sample_list:
 				new_bam_list += [bam]
 
@@ -126,7 +122,6 @@ if __name__ == '__main__':
 	
 	if opts.hdf5_list is None:
 		for bam in bam_list:
-			#print bam
 			sample_name = bam.split('/')[-1].split('.')[0]
 			hdf5 = GATK_CollectReadCounts(path,bam,sample_name,opts.target,log,HDF5_dir)
 			hdf5_array += [hdf5]

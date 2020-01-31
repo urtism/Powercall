@@ -15,8 +15,8 @@ def Bwa_mem(path,threads,sample_name,fastq1,fastq2,reference,log,workdir):
 		if os.path.isfile(elem) or os.path.isdir(elem):
 			pass
 		else: 
-			print elem 
-	#print '- BWA mem'
+			print(elem)
+	#print('- BWA mem')
 	
 	if fastq2 == None:
 		args = [path,'mem',reference,fastq1,'-t',threads]
@@ -31,7 +31,7 @@ def Bwa_mem(path,threads,sample_name,fastq1,fastq2,reference,log,workdir):
 		exit(1)
 
 def SamFormatConverter(path,ram,sam,log,workdir):
-	#print '- From Sam to Bam'
+
 	bam= workdir + '/' + '.'.join(sam.split('/')[-1].split('.')[:-1])+'.bam'
 	args = ['java','-Xmx'+ram,'-jar',path,'SamFormatConverter','I='+sam,'O='+bam]
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -42,7 +42,7 @@ def SamFormatConverter(path,ram,sam,log,workdir):
 		exit(1)
 
 def SortSam(path,ram,bam,log,workdir):
-	#print '- Bam sorting'
+	#print('- Bam sorting')
 	sort = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1])+'.sort.bam'
 	args = ['java','-Xmx'+ram,'-jar',path,'SortSam','I='+bam,'O='+sort,'SORT_ORDER=coordinate']
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -54,7 +54,7 @@ def SortSam(path,ram,bam,log,workdir):
 
 def SureCallTrimmer(path,ram,fq1,fq2,tag,outdir,log,workdir):
 
-	#print '- Adapters trimming'
+	#print('- Adapters trimming'9
 	args = ['java','-Xmx'+ram,'-jar',path,'-fq1',fq1,'-fq2',fq2,'-'+tag,'-out_loc',outdir]
 	success = subprocess.call(args,stdout=log,stderr=log)
 
@@ -74,7 +74,7 @@ def SureCallTrimmer(path,ram,fq1,fq2,tag,outdir,log,workdir):
 		exit(1)
 	
 def LocatIt(path,ram,bam,fqI2,log,workdir):
-	#print "- Merging haloplex molecular barcodes"
+	#print("- Merging haloplex molecular barcodes")
 	outbam = workdir +'/'+ '.'.join(sam.split('/')[-1].split('.')[:-1] + ['MCBmerged'] +['bam'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-U','-IB','-OB','-i','-o',outbam,bam,fqI2]
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -89,7 +89,7 @@ def LocatIt(path,ram,bam,fqI2,log,workdir):
 
 def AddOrReplaceReadGroups(path,ram,bam,sample_name,panel,run,log,workdir):
 
-	#print "- Add/replace Read groups"
+	#print("- Add/replace Read groups")
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['RG'] +['bam'])
 	args = ['java','-Xmx'+ram,'-jar',path,'AddOrReplaceReadGroups','I='+bam,'O='+outbam,'RGID='+sample_name,'RGPL=ILLUMINA','RGSM='+sample_name,'RGLB='+panel,"RGPU="+run,'VALIDATION_STRINGENCY=LENIENT']
 	success = subprocess.call(args,stdout=log,stderr=log)
@@ -102,7 +102,7 @@ def AddOrReplaceReadGroups(path,ram,bam,sample_name,panel,run,log,workdir):
 
 def BuildBamIndex(path,ram,bam,log):
 
-	#print '- Bam indexing'
+	#print('- Bam indexing')
 	bai= bam+'.bai'
 	if os.path.exists(bai):
 		status = subprocess.call("rm "+ bai , shell=True)
@@ -117,7 +117,7 @@ def BuildBamIndex(path,ram,bam,log):
 
 def MarkDuplicates(path,ram,bam,log,workdir):
 
-	#print "- Marking duplicates"
+	#print("- Marking duplicates")
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['Mark'] +['bam'])
 	metrics_file = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['MarkMetrics'] +['txt'])
 	args = ['java','-Xmx'+ram,'-jar',path,'MarkDuplicates','I='+bam,'O='+outbam,'METRICS_FILE='+metrics_file,'READ_NAME_REGEX=null','ASSUME_SORTED=true','VALIDATION_STRINGENCY=LENIENT']
@@ -131,7 +131,7 @@ def MarkDuplicates(path,ram,bam,log,workdir):
 
 def IndelRealigner(path,ram,bam,reference,mills,target,log,workdir):
 
-	#print "- Indel realignment"
+	#print("- Indel realignment")
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IR'] +['bam'])
 	intervals = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['IndelRealigner'] +['intervals'])
 
@@ -157,7 +157,7 @@ def IndelRealigner(path,ram,bam,reference,mills,target,log,workdir):
 
 def BaseRecalibrator(path,ram,bam,reference,dbsnp,mills,target,log,workdir):
 
-	#print "- Base quality score recalibration"
+	#print("- Base quality score recalibration")
 	outbam = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['BQSR'] +['bam'])
 	table = workdir +'/'+ '.'.join(bam.split('/')[-1].split('.')[:-1] + ['BQSR'] +['table'])
 	args = ['java','-Xmx'+ram,'-jar',path,'-T','BaseRecalibrator','-R',reference,'-I', bam,'-o',table,'-knownSites',dbsnp,'-knownSites',mills,'-L',target]
@@ -186,7 +186,7 @@ def BaseRecalibrator(path,ram,bam,reference,dbsnp,mills,target,log,workdir):
 def mpileup(name,reference,gbam,sbam,bam_list,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- Mpileup"
+	#print("- Mpileup")
 	mpileup = workdir +'/'+name+'.mpileup'
 	open_mpileup = open(mpileup,'w')
 
@@ -206,7 +206,7 @@ def mpileup(name,reference,gbam,sbam,bam_list,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	open_mpileup.close()
 	if not success:
-		print "- Mpileup: %d min, %d sec" % elapsed_time
+		print("- Mpileup: %d min, %d sec" % elapsed_time)
 		return mpileup
 	else:
 		f.prRed('Error in Mpileup. Check log file.')
@@ -238,7 +238,7 @@ def HaplotypeCaller(path,ram,bam,sample_name,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- HaplotypeCaller "  +sample_name + ": %d min, %d sec" % elapsed_time
+		print("- HaplotypeCaller "  +sample_name + ": %d min, %d sec" % elapsed_time)
 		return gvcf
 	else:
 		f.prRed('Error in gvcf generation: '+ sample_name+'. Check log file.')
@@ -249,7 +249,7 @@ def GenotypeGVCFs(path,ram,gvcf,name,reference,target,log,workdir):
 	start_time = datetime.datetime.now()
 
 	version = check_version_gatk(path,log)
-	#print "- GenotypeGVCFs"
+	#print("- GenotypeGVCFs")
 	vcf = workdir + '/' + name + '.GATK.vcf'
 	if version.startswith('3'):
 		args = ['java','-Xmx'+ram,'-jar',path,'-T','GenotypeGVCFs','-R',reference,'-V:VCF', gvcf,'-o',vcf]
@@ -267,7 +267,7 @@ def GenotypeGVCFs(path,ram,gvcf,name,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- GenotypeGVCFs: %d min, %d sec" % elapsed_time
+		print("- GenotypeGVCFs: %d min, %d sec" % elapsed_time)
 		return vcf
 	else:
 		f.prRed('Error in GenotypeGVCFs. Check log file.')
@@ -312,7 +312,7 @@ def Mutect2(path,ram,gbam,sbam,gsample_name,ssample_name,reference,target,log,wo
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- "+ ssample_name + ": %d min, %d sec" % elapsed_time
+		print("- "+ ssample_name + ": %d min, %d sec" % elapsed_time)
 		return filtered_vcf
 	else:
 		f.prRed('Error in Mutect2. Check log file.')
@@ -343,7 +343,7 @@ def CombineGVCFs(path,ram,gvcf_array,sample_name,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		#print("- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time)
 		return gvcf_cohort
 	else:
 		f.prRed('Error in CombineGVCFs: '+ sample_name+'. Check log file.')
@@ -366,7 +366,7 @@ def check_version_gatk(path,log):
 def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- FreeBayes"
+	#print("- FreeBayes"
 	vcf = workdir + '/' + name + '.FreeBayes.vcf'
 	if bam == None:
 		args = [path,'-f',reference,'-L', bam_list,'-v',vcf,
@@ -392,7 +392,7 @@ def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- FreeBayes: %d min, %d sec" % elapsed_time
+		print("- FreeBayes: %d min, %d sec" % elapsed_time)
 		return vcf
 	else:
 		f.prRed('Error in FreeBayes calling. Check log file.')
@@ -403,7 +403,7 @@ def FreeBayes(path,name,bam,bam_list,reference,target,log,workdir):
 def VarScan_mpileup2snp(path,ram,mpileup,sample_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- VarScan mpileup2snp"
+	#print("- VarScan mpileup2snp")
 	vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan.snp.vcf'])
 	open_vcf = open(vcf,'w')
 	args = ['java','-Xmx'+ram,'-jar',path,'mpileup2snp',mpileup,'--vcf-sample-list',sample_list,'--output-vcf','1','--strand-filter 0']
@@ -419,7 +419,7 @@ def VarScan_mpileup2snp(path,ram,mpileup,sample_list,reference,target,log,workdi
 	open_vcf.close()
 	
 	if not success:
-		print "- VarScan mpileup2snp: %d min, %d sec" % elapsed_time
+		print("- VarScan mpileup2snp: %d min, %d sec" % elapsed_time)
 		return vcf
 	else:
 		f.prRed('Error in VarScan mpileup2snp. Check log file.')
@@ -428,7 +428,7 @@ def VarScan_mpileup2snp(path,ram,mpileup,sample_list,reference,target,log,workdi
 def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- VarScan mpileup2indel"
+	#print("- VarScan mpileup2indel")
 	vcf = workdir + '/' + '.'.join(mpileup.split('/')[-1].split('.')[:-1] + ['VarScan.indel.vcf'])
 	open_vcf = open(vcf,'w')
 	args = ['java','-Xmx'+ram,'-jar',path,'mpileup2indel',mpileup,'--vcf-sample-list',sample_list,'--output-vcf','1','--strand-filter 0']
@@ -444,7 +444,7 @@ def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,target,log,work
 	open_vcf.close()
 	
 	if not success:
-		print "- VarScan mpileup2indel: %d min, %d sec" % elapsed_time
+		print("- VarScan mpileup2indel: %d min, %d sec" % elapsed_time)
 		return vcf
 	else:
 		f.prRed('Error in VarScan mpileup2indel. Check log file.')
@@ -453,7 +453,7 @@ def VarScan_mpileup2indel(path,ram,mpileup,sample_list,reference,target,log,work
 def VarScan_somatic(path,ram,gpileup,spileup,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- VarScan mpileup2indel"
+	#print("- VarScan mpileup2indel")
 	vcf = workdir + '/' + '.'.join(spileup.split('/')[-1].split('.')[:-1] + ['VarScan'])
 	snp = vcf+'.snp.vcf'
 	indel = vcf+'.indel.vcf'
@@ -470,7 +470,7 @@ def VarScan_somatic(path,ram,gpileup,spileup,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		print "- VarScan mpileup2somatic: %d min, %d sec" % elapsed_time
+		print("- VarScan mpileup2somatic: %d min, %d sec" % elapsed_time)
 		return snp,indel
 		#return vcf
 	else:
@@ -509,8 +509,7 @@ def Concat_VarScan_vcf(snp,indel,log):
 def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,reference,target,log,workdir):
 
 	start_time = datetime.datetime.now()
-	#print "- VarDict"
-	
+	#print("- VarDict")	
 
 	if sbam == None:
 		vcf =  workdir + '/' + gsample_name + '.Vardict.vcf'
@@ -545,7 +544,7 @@ def Vardict(path,path_script,threads,gbam,sbam,gsample_name,ssample_name,referen
 	open_vcf.close()
 
 	if not success:
-		print "- VarDict: %d min, %d sec" % elapsed_time
+		print("- VarDict: %d min, %d sec" % elapsed_time)
 		return vcf
 	else:
 		f.prRed('Error in VarDict. Check log file.')
@@ -567,7 +566,7 @@ def GATK_CollectReadCounts(path,ram,bam,sample_name,target_list,log,workdir):
 		success = subprocess.call(args,stdout=log,stderr=log)
 		subprocess.call(['/bin/bash', '-i', '-c', "conda deactivate"])
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return hdf5
 	else:
 		f.prRed('Error in CNV calling. Check log file.')
@@ -583,7 +582,7 @@ def GATK_DetermineGermlineContigPloidy(path,ram,hdf5,sample_name,ploidy_model,lo
 
 		args = ['/bin/bash', '-c', "source ~/miniconda2/bin/activate gatk", '&&']
 		
-		args = [path, 'DetermineGermlineContigPloidy','--output-prefix', sample_name, '--model', ploidy_model, '--output', out_dir]
+		args = [path, 'DetermineGermlineContigPloidy','--output-prefix', sample_name, '--output', out_dir]
 		
 		if isinstance(hdf5, list):
 			for sample_hdf5, sample, index in hdf5: 
@@ -591,10 +590,15 @@ def GATK_DetermineGermlineContigPloidy(path,ram,hdf5,sample_name,ploidy_model,lo
 		else:
 			args =+ ['--input', hdf5]
 
+		if os.path.isdir(ploidy_model):
+			args +=	['--model', ploidy_model]
+		else:
+			args +=	['--contig-ploidy-priors', ploidy_model]
+
 		success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return out_dir
 	else:
 		f.prRed('Error in CNV calling. Check log file.')
@@ -617,8 +621,11 @@ def GATK_GermlineCNVCaller(path,ram,hdf5,sample_name,sample_ploidy,calls_model,l
 		
 		if calls_model == "":
 			args += ['--run-mode', 'COHORT']
+			args += ['--p-alt', '0.00001']
 		else:
 			args += ['--run-mode', 'CASE', '--model', calls_model]
+			args += ['--p-alt', '0.001']
+		#args += ['--annotated-intervals', '/media/jarvis/HD1/gatk_CNV_data/TRUSIGHCANCER/20191122/trusight_cancer_manifest_a.annotated.tsv']
 	
 		success = subprocess.call(args,stdout=log,stderr=log)
 
@@ -626,7 +633,7 @@ def GATK_GermlineCNVCaller(path,ram,hdf5,sample_name,sample_ploidy,calls_model,l
 	model = workdir + '/' + sample_name + '-model'
 
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return calls, model
 	else:
 		f.prRed('Error in CNV calling. Check log file.')
@@ -634,10 +641,13 @@ def GATK_GermlineCNVCaller(path,ram,hdf5,sample_name,sample_ploidy,calls_model,l
 
 def GATK_PostprocessGermlineCNVCalls(path,ram,sample_name,index,sample_calls,sample_ploidy,calls_model,log,workdir):
 
+
 	intervals_vcf = workdir + '/' + sample_name + '.CNV.vcf'
 	segments_vcf = workdir + '/' + sample_name + '.segments.CNV.vcf'
 
 	name = sample_ploidy.split('/')[-1]
+	if calls_model.split('-')[-1] == 'calls':
+		calls_model = '-'.join(calls_model.split('-')[:-1] +['model'])
 
 	success = False
 	version = check_version_gatk(path,log)
@@ -655,8 +665,8 @@ def GATK_PostprocessGermlineCNVCalls(path,ram,sample_name,index,sample_calls,sam
 		success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
-		return intervals_vcf,segments_vcf
+		print("-GATK: " + sample_name)
+		return intervals_vcf, segments_vcf
 	else:
 		f.prRed('Error in CNV calling. Check log file.')
 		exit(1)
@@ -673,7 +683,7 @@ def Decon_ReadInBams(path,bam_list,sample_name,target_bed,reference,log,workdir)
 	rdata = out + '.RData'
 	#success = False
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return rdata
 	else:
 		f.prRed('Error in DECON CNV calling. Check log file.')
@@ -688,7 +698,7 @@ def Decon_IdentifyFailures(path,rdata,sample_name,reference,log,workdir):
 
 def Decon_makeCNVcalls(path,rdata,sample_name,reference,log,workdir):
 
-	out = workdir + '/' + sample_name + '.CNV'
+	out = workdir + '/' + sample_name + '.DECON.CNV'
 	
 	args = ['Rscript', './makeCNVcalls.R', '--Rdata', rdata, '--transProb', '0.01', '--out', out]
 
@@ -696,7 +706,7 @@ def Decon_makeCNVcalls(path,rdata,sample_name,reference,log,workdir):
 	calls = out + '_all.txt'
 	#success = False
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return calls
 	else:
 		f.prRed('Error in DECON CNV calling. Check log file.')
@@ -732,7 +742,7 @@ def HardFilter(path,ram,vcf,sample_name,reference,target,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		#print("- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time)
 		return vcf_filtered
 	else:
 		f.prRed('Error in HardFiltering: '+ sample_name+'. Check log file.')
@@ -775,7 +785,7 @@ def features_extractor(path,outpath,gatk,freebayes,varscan,merge,features_list,g
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return merge,tsvfile
 	else:
 		f.prRed('Error in features extraction. Check log file.')
@@ -799,7 +809,7 @@ def features_extractor_somatic(path,outpath,mutect,vardict,varscan,gname,sname,f
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return tsvfile,vcffile
 	else:
 		f.prRed('Error in features extraction. Check log file.')
@@ -822,7 +832,7 @@ def features_extractor_somatic_MUTECT2(path,outpath,mutect,sname,features_list,d
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 
 	if not success:
-		#print "- Estraction: %d min, %d sec" % elapsed_time
+		#print("- Estraction: %d min, %d sec" % elapsed_time)
 		return tsvfile,mutect
 	else:
 		f.prRed('Error in features extraction. Check log file.')
@@ -869,13 +879,13 @@ def VariantAnnotator(path,vcf,reference,bam,target,log,workdir):
 
 	if target != None:
 		args += ['-L',target]
-	print ' '.join(args)
+	print(' '.join(args))
 	success = subprocess.call(args,stdout=log,stderr=log)
 	#success = 0
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		#print("- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time)
 		return out_vcf
 	else:
 		f.prRed('Error in VariantAnnotator: '+ vcf+'. Check log file.')
@@ -900,7 +910,7 @@ def SelectVariants(path,vcf,reference,sample_name,log,workdir):
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 	
 	if not success:
-		#print "- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time
+		#print("- CombineGVCFs "  +sample_name + ": %d min, %d sec" % elapsed_time)
 		return out_vcf
 	else:
 		f.prRed('Error in SelectVariants: '+ vcf +'. Check log file.')
@@ -929,11 +939,11 @@ def Vep(path,fork,name,reference,transcript_list,vep_af,vep_plugins,vcf,log,work
 		args += ['--most_severe']
 	
 
-	#print ' '.join(args)
+	#print(' '.join(args))
 	success = subprocess.call(args,stdout=log,stderr=log)
 
 	if not success:
-		print "- VEP: " + name
+		print("- VEP: " + name)
 		return vep_vcf
 	else:
 		f.prRed('Error in VEP annotation. Check log file.' + log)
@@ -1031,3 +1041,82 @@ def Sort_vcf(path,vcf,log,workdir):
 	else:
 		f.prRed('Error in Vcf Sorting. Check log file.')
 		exit(1)
+
+def Make_CNV_report(infofile, cnv_vcf_array, log, workdir):
+
+	def checkX(X):
+		allele0 = []
+		allele1 = []
+		allele2 = []
+		allele3 = []
+		cnv_arr = []
+		for xcnv in X:
+			sample_id, chrom, start, end, cn, cnlp, cnq = xcnv
+			if cn == '1':
+				allele1 += [[sample_id, chrom, start, end, cn, cnlp, cnq]]
+			elif cn == '0':
+				allele0 += [[sample_id, chrom, start, end, cn, cnlp, cnq]]
+			elif cn == '2':
+				allele2 += [[sample_id, chrom, start, end, cn, cnlp, cnq]]
+			else:
+				allele3 += [[sample_id, chrom, start, end, cn, cnlp, cnq]]
+
+		if allele3 != []:
+			cnv_arr += allele3
+		if allele0 != []:
+			cnv_arr += allele0
+		if allele1 != [] and allele2 != []:
+			if len(allele2) > len(allele1):
+				cnv_arr += allele1
+			else:
+				cnv_arr += allele2
+		return cnv_arr
+
+	report = workdir + '/GATK.CNV.Report.tsv'
+	repo = open(report,'w')
+	repo.write('\t'.join(['SAMPLE_ID', 'CHROM', 'START', 'END', 'NUM_OF_COPIES', 'LIKELIHOODS', 'MIN_LIKELIHOOD' ,'GENE', 'EXON']) +'\n')
+	
+	for cnv_vcf in cnv_vcf_array:
+		cnv = []
+		X = []
+		with open(cnv_vcf) as file:
+			for line in file:
+				if line.startswith('##'):
+					continue
+				elif line.startswith('#'):
+					sample_id = line.split('\t')[-1].rstrip()
+				else:
+					chrom, pos, id, ref, alt, qual, filter, info, format, sample = line.rstrip().split('\t')
+					start = id.split('_')[2]
+					end = id.split('_')[3]
+					gt, cn, cnlp, cnq = sample.split(':')
+
+					if chrom == 'chrX' or chrom == 'X':
+						X += [[sample_id, chrom, start, end, cn, cnlp, cnq]]
+					elif gt != '0' or (gt == '0' and int(cnq)) < 10:	
+						cnv += [[sample_id, chrom, start, end, cn, cnlp, cnq]]
+			file.close()
+		#print(sample_id, checkX(X))
+		cnv += checkX(X)
+
+		for rawcnv in cnv:
+			gene = '-'
+			exon = '-'
+			sample_id, chrom, start, end, cn, cnlp, cnq = rawcnv
+			with open(infofile) as ifile:
+				for iline in ifile:
+					if line.startswith('Gene_name'):
+						continue
+					else:
+						Gene_name, Gene_ID, Transcript_ID, RefSeq_ID, Strand, Chromosome, Exon_region_start, Exon_region_end, Exon_rank_in_transcript = iline.rstrip().split('\t')
+						
+						if Chromosome == chrom and int(Exon_region_start) - 100 <= int(start) and int(Exon_region_end) + 100  >= int(end):
+							gene = Gene_name 
+							exon = Exon_rank_in_transcript
+			ifile.close()
+			repo.write('\t'.join(rawcnv+[gene,exon]) +'\n')
+	repo.close()
+
+	return report
+
+

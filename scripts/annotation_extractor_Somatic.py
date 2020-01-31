@@ -31,7 +31,7 @@ def add_ann():
             try:
                 header_ann = line.split('\t')[0:5] + header_ann
             except:
-                print line  
+                print(line)  
             for tag in ann_list:
                 tag = tag.rstrip()
                 if tag.startswith('#'):
@@ -52,14 +52,14 @@ def add_ann():
                     if i == '':
                         var_princ[var_princ.index(i)] = '-'
             except:
-                print 'gne'
+                print('gne')
             try:
                 for ann in ann_list_other:
                     for i in ann:
                         if i == '':
                             ann[ann.index(i)] = '-'
             except:
-                print 'gne'
+                print('gne')
         var=[]
         for variante in file_coor:
             var_split = variante.rstrip().split('\t')
@@ -78,7 +78,7 @@ def add_ann():
                         var = var + [var_princ[id]]
                     except:
                         continue
-                if  var != ['-']:  #print var_princ[id]
+                if  var != ['-']:  #print(var_princ[id])
                     out.write('\t'.join(var_split + var) + '\n')
                 else:    
                     for ann in ann_list_other:

@@ -427,7 +427,6 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes):
 		freebayes.GT='./.'
 	if freebayes.GT=='./.':
 		pass
-		#print chrom,pos,ref,alt,freebayes.GT
 	else:
 		freebayes.GQ=sample[format.index('GQ')]
 		freebayes.AO=float(sample[format.index('AO')])
@@ -585,7 +584,6 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK):
 		except:
 			GATK.DP=0.0
 			pass
-			#print chrom,pos,ref,alt,'erroreeeeeeeee'
 		try:
 			GATK.RF=(GATK.AO+GATK.RO)/GATK.DP
 		except:
@@ -683,7 +681,6 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 	
 	varscan.GT=sample[format.index('GT')]
 	if varscan.GT== './.':
-		#print chrom,pos,ref,alt,varscan.GT
 		pass
 	else:
 		varscan.AO=float(sample[format.index('AD')])
@@ -743,7 +740,6 @@ def get_info_Varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan):
 			varscan.SOR='.'
 
 		varscan.FILTER=filter
-		#print chrom,pos,ref,alt,varscan.GT
 		varscan.Call=1
 	return varscan
 
@@ -1235,12 +1231,8 @@ def readline(file,sample,variants):
 				variants[IDvar]['I'] = get_info_Ieva(chrom,pos,ref,alt,I_filter,I_info,I_format,I_sample,Ieva())
 
 			except Exception:
-				print chrom,pos
+				print(chrom,pos)
 				raise
-			
-
-			#except:
-				#print sample +' is not present in vcf file.'
 	vcf.close()
 	return variants
 				
@@ -1273,14 +1265,11 @@ def print_var(dictionary,out,sample_name):
 			header=header+[line]
 			features_variante=features_variante+['features.'+line]
 
-	#print features_variante
 	dataset_varianti.write('CHROM\tPOS\tID\tREF\tALT\t' + '\t'.join(header)+ '\n')
 	for variante in dictionary.keys():
 		features = dictionary.get(variante)['features']
-		#print features_variante
 		features_variante_eval=[]
 		for feat in features_variante:
-			#print feat
 		 	feat_eval=str(eval(feat))
 		 	features_variante_eval=features_variante_eval + [feat_eval]
 		var=variante.split('\t')[0]+'\t'+variante.split('\t')[1]+'\t' +sample_name +'\t'+variante.split('\t')[2]+'\t'+variante.split('\t')[3]+ '\t' + '\t'.join(features_variante_eval)
@@ -1316,7 +1305,7 @@ def split_vcf(vcf_dir,sample):
 			variant_caller = 'GATK'
 	elif 'VarScan' in vcf_name:
 			variant_caller = 'VarScan'
-	print '\n'+variant_caller +':'
+	print('\n'+variant_caller +':')
 	
 	for line in vcf:
 		line=line.rstrip()
@@ -1328,7 +1317,7 @@ def split_vcf(vcf_dir,sample):
 		 	varianti = varianti + [line]
 	i=0
 	for sample in samples:
-		print sample
+		print(sample)
 		try: 
 			os.mkdir(opts.out_path +'/' + sample)
 		except:
@@ -1359,13 +1348,11 @@ def addInfo_gvcf(chrom,pos,format,fsample,sample):
 				try:
 					sSB = gsample.split(':')[(gformat.split(':')).index('SB')]
 				except:
-					#print 'ci sono problemi',sample,chrom,pos,format,gsample
 					sSB = '.'
 
 				try:
 					sQD = round(float(qual)/ad_sum ,2)
 				except:
-					#print 'ci sono problemi',sample,chrom,pos,format,gsample
 					sQD = 0.0
 				break
 		
@@ -1403,7 +1390,7 @@ def main():
 		print_var(variants,opts.out_path,sample)
 		elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 		samples_file.write(opts.out_path+'/'+sample+'.tsv\n')
-		print "- "+sample+": %d min, %d sec" % elapsed_time
+		print("- "+sample+": %d min, %d sec" % elapsed_time)
 	samples_file.close()
 
 main()

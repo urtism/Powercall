@@ -22,7 +22,7 @@ if __name__ == '__main__':
 	parser.add_argument('-s', '--samplesheet', help="Samplesheet that contains filepaths and samples associated", required=True)
 	parser.add_argument('-d', '--design', help="Design of the NGS experiment [Enrichment,Amplicon].",choices=['Enrichment','Amplicon'])
 	parser.add_argument('-p', '--panel', help="Type of Panel used for the analysis [TrusightCardio (illumina), TrusightCancer (illumina), TrusightOne (illumina), BRCAMASTRDx (MULTIPLICOM), ALPORTMASTR (MULTIPLICOM), HTC (SophiaGenetics), CustomSSQXT (Custom SureSelect QXT Agilent), CustomHPHS (Custom HaloPlex HS Agilent), Custom (Other Custom panel)]",
-		choices="[TrusightCardio, TrusightCancer, TrusightOne, BRCAMASTRDx, ALPORTMASTR, HTC, CustomSSQXT, CustomHPHS, Custom]")
+		choices="[TrusightCardio, TrusightCancer, TrusightOne, BRCAMASTRDx, ALPORTMASTR, HCS, CustomSSQXT, CustomHPHS, Custom]")
 	parser.add_argument('-a', '--analysis', help="Type of analysis [Germline (Multisample), GermlineSS (Singlesample), SomaticCC (Case-Control), Somatic (only Case)].", choices=['Germline', 'GermlineSS','SomaticCC','Somatic'], default='Germline')
 	parser.add_argument('-id','--run_id', help="Run id [YYYYMMDD_Run_NRUN_PANEL}", required=True)
 	parser.add_argument('-w', '--workdir', help="Working Directory. Use this option if you want to work in a precise directory. Default: '/home/run_id'", default=None)
@@ -79,4 +79,4 @@ if __name__ == '__main__':
 		pipeline.Pipeline_Somatic(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls)
 
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-	print "\nTime elapsed: %d min, %d sec" % elapsed_time
+	print("\nTime elapsed: %d min, %d sec" % elapsed_time)

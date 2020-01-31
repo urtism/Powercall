@@ -64,7 +64,7 @@ def get_info_gatk(info,format,tumor,normal):
 	try:
 		mutect.RO_f, mutect.RO_r, mutect.AO_f, mutect.AO_r = tumor[format.index('SB')].split(',')
 	except:
-		print tumor
+		print(tumor)
 
 	R = (float(mutect.RO_f)+1) * (float(mutect.AO_r)+1) / (float(mutect.RO_r)+1) * (float(mutect.AO_f)+1)
 	SymmetricRatio = R + 1/R

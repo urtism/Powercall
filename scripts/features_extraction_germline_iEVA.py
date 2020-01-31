@@ -434,7 +434,7 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes,mer
 
 	if freebayes.GT=='.':
 		freebayes.GT='./.'
-		#print chrom,pos,ref,alt,freebayes.GT
+		#print(chrom,pos,ref,alt,freebayes.GT)
 	if freebayes.GT=='./.':
 		pass
 	else:
@@ -579,7 +579,7 @@ def get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes,mer
 			freebayes.FILTER=filter.split(',')[1]
 		except:
 			freebayes.FILTER=filter
-		#print chrom,pos,ref,alt,freebayes.GT
+		#print(chrom,pos,ref,alt,freebayes.GT)
 	
 	freebayes.Call=1
 
@@ -692,7 +692,7 @@ def get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,GATK,merged):
 			GATK.FILTER=filter.split(',')[0]
 		except:
 			GATK.FILTER=filter
-		#print chrom,pos,ref,alt,GATK.GT
+		#print(chrom,pos,ref,alt,GATK.GT)
 		GATK.Call=1
 	
 def get_info_varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan,merged):
@@ -703,7 +703,7 @@ def get_info_varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan,merged)
 		suffisso=''
 	varscan.GT=sample[format.index('GT'+suffisso)]
 	if varscan.GT== './.':
-		#print chrom,pos,ref,alt,varscan.GT
+		#print(chrom,pos,ref,alt,varscan.GT)
 		pass
 	else:
 		varscan.AO=float(sample[format.index('AD'+suffisso)])
@@ -762,7 +762,7 @@ def get_info_varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan,merged)
 			Varscan.FILTER=filter.split(',')[2]
 		except:
 			Varscan.FILTER=filter
-		#print chrom,pos,ref,alt,varscan.GT
+		#print(chrom,pos,ref,alt,varscan.GT)
 		Varscan.Call=1
 
 def set_features(dictionary):
@@ -777,8 +777,6 @@ def set_features(dictionary):
 		vett_RO=[]
 		vett_AC=[]
 		index=0
-		#print variante
-		#print varc_array
 		for varcall in varc_array[:-1]:
 			if varcall is not "":
 				vett_MBQ=vett_MBQ+[varcall.QB]
@@ -1126,21 +1124,18 @@ def switch(dictionary,ID,index,chrom,pos,ref,alt,filter,info,format,sample):
 			vettore=['','','']
 
 		if index==0:
-			# print 'Freebayes'
 			freebayes=Freebayes()
 			get_info_Freebayes(chrom,pos,ref,alt,filter,info,format,sample,freebayes,0)
 			if freebayes.GT != './.':
 				vettore[0]=freebayes
 
 		elif index==2:
-			# print 'gatk'
 			gatk=GATK()
 			get_info_GATK(chrom,pos,ref,alt,filter,info,format,sample,gatk,0)
 			if gatk.GT != './.':
 				vettore[2]=gatk
 
 		elif index==1 :
-			# print 'varscan'
 			varscan=Varscan()
 			get_info_varscan(chrom,pos,ref,alt,filter,info,format,sample,varscan,0)
 			if varscan.GT != './.':
@@ -1156,7 +1151,6 @@ def read(iterable,index,dictionary):
 		else:
 			ind=0
 			var = line.split("\t")
-			#print var[1]
 			chrom=var[0]
 			pos=var[1]
 			ref=var[3]
@@ -1176,7 +1170,6 @@ def control(dictionary):
 	''' esegue un controllo sulle varianti, se non hanno variant caller che le chiama vengono eliminate'''
 	for variante in dictionary.keys():
 		if dictionary[variante][:3] == ['','','']:
-			#print "sto cancellando:",variante
 			del dictionary[variante]
 				
 def print_var(dictionary,out,sample_name):
@@ -1199,14 +1192,11 @@ def print_var(dictionary,out,sample_name):
 				header=header+[line]
 				features_variante=features_variante+['features.'+line]
 
-	#print features_variante
 	dataset_varianti.write('CHROM\tPOS\tID\tREF\tALT\t' + '\t'.join(header)+ '\n')
 	for variante in dictionary.keys():
 		features = dictionary.get(variante)[-1]
-		#print features_variante
 		features_variante_eval=[]
 		for feat in features_variante:
-			#print feat
 		 	feat_eval=str(eval(feat))
 		 	features_variante_eval=features_variante_eval + [feat_eval]
 		#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	20151202_01_Cardio
@@ -1259,7 +1249,7 @@ def split_vcf(vcf_dir,samples):
 	else:
 		variant_caller = 'Merged'
 
-	print '\n'+variant_caller +'\n'
+	print('\n'+variant_caller +'\n')
 
 	for line in vcf:
 		line=line.rstrip()
@@ -1271,8 +1261,7 @@ def split_vcf(vcf_dir,samples):
 		 	varianti = varianti + [line]
 	i=0
 	for sample in samples:
-		print sample
-
+		print(sample)
 		try: 
 			os.mkdir(opts.out_path +'/' + sample)
 		except:
@@ -1340,7 +1329,7 @@ def split_vcf(vcf_dir,samples):
 								sQD = 0.0
 							break
 						except:
-							print 'ci sono problemi',sample,chrom,pos,format,sformat
+							print('ci sono problemi',sample,chrom,pos,format,sformat)
 		
 				variante_common = variante_split[0:8] + [variante_split[8]+':SB'+suffisso+':SQD'+suffisso]
 				format_sample = variante_split[header_chrom.index(sample)]  +':'+ sSB + ':' + str(sQD)
@@ -1378,12 +1367,12 @@ def main():
 	if opts.merged != None:
 		samples = samples_name_extract(open(opts.merged,'r'))
 		if opts.split:
-			print 'Splitto le varianti per campione.'
+			print('Splitto le varianti per campione.')
 			split_vcf(opts.merged,samples)
 			print'\nSplitto le varianti per campione:Done'
 
 		if opts.feat_extraction:
-			print '\nFEATURES EXTRACTION.'
+			print('\nFEATURES EXTRACTION.')
 			varianti_total = dict()
 			for dir_sample in os.listdir(opts.out_path):
 				varianti = dict()
@@ -1404,26 +1393,24 @@ def main():
 	else:
 		callers = [opts.gatk,opts.varscan,opts.freebayes]
 		samples = samples_name_extract(open(opts.freebayes,'r'))
-		print callers
+		print(callers)
 		
 		
 		if opts.split:
-			print 'Splitto le varianti per campione.'
+			print('Splitto le varianti per campione.')
 			for vcf_dir in callers:
-				#print 'Splitto ' + vcf_dir
 				split_vcf(vcf_dir,samples)
-			print'\nSplitto le varianti per campione:Done'
+			print('\nSplitto le varianti per campione:Done')
 
 		if opts.feat_extraction:
-			print '\nFEATURES EXTRACTION.'
+			print('\nFEATURES EXTRACTION.')
 			varianti_total = dict()
 			for dir_sample in os.listdir(opts.out_path):
 				varianti = dict()
 				vcf_path = opts.out_path +'/' + dir_sample
 				if os.path.isdir(vcf_path):
-					print "\nAnalizzo le varianti da: " + vcf_path
+					print("\nAnalizzo le varianti da: " + vcf_path)
 					for vcf_name in os.listdir(vcf_path) :
-						print vcf_name
 						if 'FreeB' in vcf_name:
 							index = 0
 						elif 'GATK' in vcf_name:

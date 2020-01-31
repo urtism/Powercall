@@ -1,4 +1,5 @@
 import subprocess
+import os
 from ruffus import *
 import tools
 import datetime
@@ -6,7 +7,7 @@ import Functions as f
 
 def Alignment(panel,sample_name,fq1,fq2,fqI2,dirs,cfg,opts,log,workdir):
 	start_time = datetime.datetime.now()
-	#print 'Sample: '+sample_name
+	#print('Sample: '+sample_name
 	f.makedirs([dirs['alignment']])
 
 	workdir = dirs['alignment']
@@ -45,12 +46,12 @@ def Alignment(panel,sample_name,fq1,fq2,fqI2,dirs,cfg,opts,log,workdir):
 		f.Copy([fq1,fq2],dirs['storage'])
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
 
-	print 'Sample: '+sample_name+ ' -> Done in: %d min, %d sec' % elapsed_time
+	print('Sample: '+sample_name+ ' -> Done in: %d min, %d sec' % elapsed_time)
 	return sort
 
 def Preprocessing(panel,workflow,target_list,sample_name,bam,dirs,cfg,opts,log,workdir):
 
-	#print 'Sample: ' + sample_name
+	#print('Sample: ' + sample_name)
 	start_time = datetime.datetime.now()
 
 	if 'R' in workflow:
@@ -86,25 +87,25 @@ def Preprocessing(panel,workflow,target_list,sample_name,bam,dirs,cfg,opts,log,w
 	tools.BuildBamIndex(cfg['tools']['PICARD']['path'],cfg['tools']['PICARD']['ram'],bam,log)
 
 	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-	print 'Sample: '+sample_name+ ' -> Done in: %d min, %d sec' % elapsed_time
+	print('Sample: '+sample_name+ ' -> Done in: %d min, %d sec' % elapsed_time)
 	return bam
 	#f.Delete([sam,bam])
 
 def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls):
 
 	#status = subprocess.call("cat "+ dirs['logo']+'/logo_cmg.txt', shell=True)
-	print '\n\nPOWERCALL v3.2.0 IS STARTING'
-	print '"The coolest Pipeline I have ever seen" (Cit. Anonymous Fan)'
-	print 'Powered by Mario Urtis and CMGCV, IRCCS Fondazione Policlinico S.Matteo, Pavia, (IT)\n\n'
+	print('\n\nPOWERCALL v3.2.0 IS STARTING')
+	print('"The coolest Pipeline I have ever seen" (Cit. Anonymous Fan)')
+	print('Powered by Mario Urtis and CMGCV, IRCCS Fondazione Policlinico S.Matteo, Pavia, (IT)\n\n')
 
 	if 'A' in workflow:
 
-		print "ALIGNMENT:"
-		if panel == 'CustomSSQXT' or panel == 'CustomHPHS': print "-Adapters trimming"
-		print "-BWA mem"
-		print "-SamFormatConverter"
-		if panel == 'CustomHPHS': print "-Merge haloplex molecular barcodes"
-		print "-Sort Bam\n"
+		print("ALIGNMENT:")
+		if panel == 'CustomSSQXT' or panel == 'CustomHPHS': print("-Adapters trimming")
+		print("-BWA mem")
+		print("-SamFormatConverter")
+		if panel == 'CustomHPHS': print("-Merge haloplex molecular barcodes")
+		print("-Sort Bam\n")
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
@@ -128,13 +129,13 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 		new_samplesheet.close()
 
 	if 'R' in workflow or 'M' in workflow or 'I' in workflow or 'B' in workflow:
-		print "\nPREPROCESSING:"
+		print("\nPREPROCESSING:")
 
-		if "R" in workflow: print "-AddOrReplaceReadGroups"
-		if "M" in workflow: print "-MarkDuplicates"
-		if "I" in workflow: print "-IndelRealigner"
-		if "B" in workflow: print "-BaseRecalibrator"
-		print ""
+		if "R" in workflow: print("-AddOrReplaceReadGroups")
+		if "M" in workflow: print("-MarkDuplicates")
+		if "I" in workflow: print("-IndelRealigner")
+		if "B" in workflow: print("-BaseRecalibrator")
+		print("")
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
 		samplesheet = dirs['log'] + '/Variantcalling.samplesheet'
@@ -153,7 +154,7 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 		new_samplesheet.close()
 	
 	if 'V' in workflow:
-		print "\nVARIANT CALLING"
+		print("\nVARIANT CALLING")
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'VariantCalling')
 		variantcalling_log = open(dirs['log'] + '/VariantCalling.log','w+')
@@ -230,11 +231,12 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 		f.Copy(to_ss,dirs['storage'])
 		new_samplesheet.write('\t'.join([name]+to_ss))
 		variantcalling_log.close()
+		CNVsamplesheet.close()
 		new_samplesheet.close()
 
 	if 'F' in workflow:
 
-		print "\nFEATURES EXTRACTION"
+		print("\nFEATURES EXTRACTION")
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Featuresextraction')
 		featuresextraction_log = open(dirs['log'] + '/FeaturesExtraction.log','w+')
@@ -250,7 +252,6 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 				toannotate_vcf, samples_list = tools.features_extractor(dirs['script']+'features_extractor_GATK.py',workdir,gatk_vcf,None,None,None,cfg['files']['LISTAFEATURES_GERMLINE'],dirs['gvcf'],design,featuresextraction_log,workdir)
 		else:
 			for sample in samples.keys():
-				#name,gatk_vcf,freeb_vcf,varscan_vcf = samples[sample][0]
 				name, merge_vcf = samples[sample][0]
 				bam_list = workdir+'/bams.list'
 				#ieva_vcf = tools.iEVa(cfg['tools']['iEVA']['path'],merge_vcf,cfg['reference']['FASTA'],bam_list,log,workdir)
@@ -263,12 +264,10 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 	if 'E' in workflow:
 
-		print "\nANNOTATION"
+		print("\nANNOTATION")
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'Annotation')
 		annotation_log = open(dirs['log'] + '/Annotation.log','w+')
-		#samplesheet = dirs['log'] + '/.samplesheet'
-		#new_samplesheet = open(samplesheet,'w+')
 		workdir = dirs['annotation']
 		f.makedirs([dirs['annotation']])
 		sample_list = workdir+'/samples.list'
@@ -283,23 +282,21 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 				f.Copy([out_tsv],dirs['storage'])
 		
 		samplesheet = dirs['log'] + '/CopyNumber.samplesheet'
-		pass
 
 	if 'C' in workflow:
 
-		print "\nCNV CALLING"
-		print "-GATK"
-		
+		print("\nCNV CALLING")		
 		#samplesheet = dirs['log'] + '/CopyNumber.samplesheet'
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'CNV')
 		cnv_log = open(dirs['log'] + '/CopyNumber.log','w+')
 		name = opts.run_id
-		f.makedirs([dirs['CNV'], dirs['CNV_HDF5'],  dirs['CNV_PLOIDY'], dirs['CNV_CALLS']])
+		f.makedirs([dirs['CNV'], dirs['CNV_HDF5'], dirs['CNV_PLOIDY'], dirs['CNV_CALLS']])
 		workdir = dirs['CNV']
 		bam_list = workdir+'/bams.list'
 		bam_l = open(bam_list,'w+')
 		sample_index = 0
 		hdf5_array = []
+		cnv_vcf_array = []
 		for sample in samples.keys():
 			sample_name,bam = samples[sample][0]
 			hdf5 = tools.GATK_CollectReadCounts(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],bam,sample_name,cnv_target_list,cnv_log,dirs['CNV_HDF5'])
@@ -310,29 +307,34 @@ def Pipeline_Germline_Multisample(workflow,samplesheet,design,panel,dirs,cfg,opt
 		
 		bam_l.close()
 
-		print hdf5_array
-
 		if cnv_ref_ploidy == "":
-			cnv_ref_ploidy = os.path.dirname(os.path.abspath(__file__)) + '/FILES/Prior.ploidy'
+			cnv_ref_ploidy = dirs['files'] +'/Prior.ploidy'
+			print(cnv_ref_ploidy)
 
 		GATK_sample_ploidy = tools.GATK_DetermineGermlineContigPloidy(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],hdf5_array,name,cnv_ref_ploidy,cnv_log,dirs['CNV_PLOIDY'])
 		GATK_sample_calls, GATK_sample_model = tools.GATK_GermlineCNVCaller(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],hdf5_array,name,GATK_sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV_CALLS'])
 
 		if cnv_ref_calls == "":
-			cnv_ref_calls = GATK_sample_calls
+			cnv_ref_calls = GATK_sample_model
 
 		for hdf5,sample_name,sample_index in hdf5_array:
-			cnv_vcf,intervals_vcf = tools.GATK_PostprocessGermlineCNVCalls(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],sample_name,sample_index,GATK_sample_calls,GATK_sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV'])
-			f.Copy([cnv_vcf,intervals_vcf],dirs['storage'])
-			f.Copy([cnv_vcf,intervals_vcf],dirs['out'])
+			cnv_vcf, segments_vcf = tools.GATK_PostprocessGermlineCNVCalls(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],sample_name,sample_index,GATK_sample_calls,GATK_sample_ploidy,cnv_ref_calls,cnv_log,dirs['CNV'])
+			cnv_vcf_array += [cnv_vcf]
+			f.Copy([cnv_vcf, segments_vcf],dirs['storage'])
+			f.Copy([cnv_vcf, segments_vcf],dirs['out'])
+		
+
+		GATK_CNV_report = tools.Make_CNV_report(dirs['files'] +'/'+panel +'_exons_info.txt', cnv_vcf_array, cnv_log, dirs['CNV'])
+		f.Copy([GATK_CNV_report],dirs['out'])
+		f.Copy([GATK_CNV_report],dirs['storage'])
 			
-		print "-DECoN"
-		with f.working_directory(cfg['variantcaller']['DECON']['path']):
-			rdata = tools.Decon_ReadInBams(cfg['variantcaller']['DECON']['path'],bam_list,name,cnv_target_bed,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
-			tools.Decon_IdentifyFailures(cfg['variantcaller']['GATK']['path'],rdata,name,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
-			decon_calls = tools.Decon_makeCNVcalls(cfg['variantcaller']['GATK']['path'],rdata,name,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
-			f.Copy([decon_calls],dirs['storage'])
-			f.Copy([decon_calls],dirs['out'])
+		# print("-DECoN")
+		# with f.working_directory(cfg['variantcaller']['DECON']['path']):
+		# 	rdata = tools.Decon_ReadInBams(cfg['variantcaller']['DECON']['path'],bam_list,name,cnv_target_bed,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
+		# 	tools.Decon_IdentifyFailures(cfg['variantcaller']['GATK']['path'],rdata,name,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
+		# 	decon_calls = tools.Decon_makeCNVcalls(cfg['variantcaller']['GATK']['path'],rdata,name,cfg['reference']['FASTA'],cnv_log,dirs['CNV'])
+		# 	f.Copy([decon_calls],dirs['storage'])
+		# 	f.Copy([decon_calls],dirs['out'])
 
 def Pipeline_Germline_Singlesample(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls):
 
@@ -380,7 +382,7 @@ def Pipeline_Germline_Singlesample(workflow,samplesheet,design,panel,dirs,cfg,op
 		new_samplesheet.close()
 	
 	if 'V' in workflow:
-		print "\nVARIANT CALLING"
+		print("\nVARIANT CALLING")
 
 		samples = f.ReadSampleSheet(samplesheet,'Germline',panel,'VariantCalling')
 		variantcalling_log = open(dirs['log'] + '/VariantCalling.log','w+')
@@ -435,12 +437,12 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 	if 'A' in workflow:
 
-		print "ALIGNMENT:"
-		if panel == 'CustomSSQXT' or panel == 'CustomHPHS': print "-Adapters trimming"
-		print "-BWA mem"
-		print "-SamFormatConverter"
-		if panel == 'CustomHPHS': print "-Merge haloplex molecular barcodes"
-		print "-Sort Bam\n"
+		print("ALIGNMENT:")
+		if panel == 'CustomSSQXT' or panel == 'CustomHPHS': print("-Adapters trimming")
+		print("-BWA mem")
+		print("-SamFormatConverter")
+		if panel == 'CustomHPHS': print("-Merge haloplex molecular barcodes")
+		print("-Sort Bam\n")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
@@ -471,12 +473,12 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 	if 'R' in workflow or 'M' in workflow or 'I' in workflow or 'B' in workflow:
 
-		print "\nPREPROCESSING:"
+		print("\nPREPROCESSING:")
 
-		if "R" in workflow: print "-AddOrReplaceReadGroups"
-		if "M" in workflow: print "-MarkDuplicates"
-		if "I" in workflow: print "-IndelRealigner"
-		if "B" in workflow: print "-BaseRecalibrator"
+		if "R" in workflow: print("-AddOrReplaceReadGroups")
+		if "M" in workflow: print("-MarkDuplicates")
+		if "I" in workflow: print("-IndelRealigner")
+		if "B" in workflow: print("-BaseRecalibrator")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
@@ -500,7 +502,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 		new_samplesheet.close()
 	
 	if 'V' in workflow:
-		print "\nVARIANT CALLING"
+		print("\nVARIANT CALLING")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'VariantCalling')
 		variantcalling_log = open(dirs['log'] + '/VariantCalling.log','w+')
@@ -516,7 +518,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 
 			gsample_name,gbam = samples[sample][0]
 			ssample_name,sbam = samples[sample][1]
-			print "-"+ssample_name
+			print("-"+ssample_name)
 			mutect_vcf = tools.Mutect2(cfg['variantcaller']['GATK']['path'],cfg['variantcaller']['GATK']['ram'],gbam,sbam,gsample_name,ssample_name,cfg['reference']['FASTA'],target_bed,variantcalling_log,workdir)
 			mutect_vcf = tools.vcf_norm(cfg['tools']['BCFTOOLS']['path'],mutect_vcf,cfg['reference']['FASTA'],variantcalling_log)
 
@@ -535,7 +537,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 		new_samplesheet.close()
 
 	if 'F' in workflow:
-		print "\nFEATURES EXTRACTION"
+		print("\nFEATURES EXTRACTION")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Featuresextraction')
 		featuresextraction_log = open(dirs['log'] + '/FeaturesExtraction.log','w+')
@@ -558,7 +560,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 		featuresextraction_log.close()
 	
 	if 'E' in workflow:
-		print "\nANNOTATION"
+		print("\nANNOTATION")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic_Case_Control',panel,'Annotation')
 		annotation_log = open(dirs['log'] + '/Annotation.log','w+')
@@ -567,7 +569,7 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 		workdir = dirs['annotation']
 		f.makedirs([dirs['annotation']])
 		for sample in samples.keys():
-			print sample
+			 #print(sample)
 			name,vcf,tsvfile= samples[sample][0]
 			annotated_vcf = tools.Vep(cfg['annotation']['VEP']['path'],cfg['annotation']['VEP']['fork'],name,cfg['reference']['FASTA'],transcripts_list,cfg['annotation']['VEP']['af'],cfg['annotation']['VEP']['plugins'],vcf,annotation_log,workdir)
 			workdir = dirs['out']
@@ -578,18 +580,18 @@ def Pipeline_Somatic_Case_Control(workflow,samplesheet,design,panel,dirs,cfg,opt
 def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls):
 
 	#status = subprocess.call("cat "+ dirs['logo']+'/logo_cmg.txt', shell=True)
-	print '\n\nPOWERCALL v3.2.0 IS STARTING'
-	print '"The coolest Pipeline I have ever seen" (Cit. Anonymous Fan)'
-	print 'Powered by Mario Urtis and CMGCV, IRCCS Fondazione Policlinico S.Matteo, Pavia, (IT)\n\n'
+	print('\n\nPOWERCALL v3.2.0 IS STARTING')
+	print('"The coolest Pipeline I have ever seen" (Cit. Anonymous Fan)')
+	print('Powered by Mario Urtis and CMGCV, IRCCS Fondazione Policlinico S.Matteo, Pavia, (IT)\n\n')
 
 	if 'A' in workflow:
 
-		print "ALIGNMENT:"
-		if panel == 'CustomSSQXT' or panel == 'CustomHPHS': print "-Adapters trimming"
-		print "-BWA mem"
-		print "-SamFormatConverter"
-		if panel == 'CustomHPHS': print "-Merge haloplex molecular barcodes"
-		print "-Sort Bam\n"
+		print("ALIGNMENT:")
+		if panel == 'CustomSSQXT' or panel == 'CustomHPHS': print("-Adapters trimming")
+		print("-BWA mem")
+		print("-SamFormatConverter")
+		if panel == 'CustomHPHS': print("-Merge haloplex molecular barcodes")
+		print("-Sort Bam\n")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'Alignment')
 		alignment_log = open(dirs['log'] + '/Alignment.log','w+')
@@ -613,13 +615,13 @@ def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list
 		new_samplesheet.close()
 
 	if 'R' in workflow or 'M' in workflow or 'I' in workflow or 'B' in workflow:
-		print "\nPREPROCESSING:"
+		print("\nPREPROCESSING:")
 
-		if "R" in workflow: print "-AddOrReplaceReadGroups"
-		if "M" in workflow: print "-MarkDuplicates"
-		if "I" in workflow: print "-IndelRealigner"
-		if "B" in workflow: print "-BaseRecalibrator"
-		print ""
+		if "R" in workflow: print("-AddOrReplaceReadGroups")
+		if "M" in workflow: print("-MarkDuplicates")
+		if "I" in workflow: print("-IndelRealigner")
+		if "B" in workflow: print("-BaseRecalibrator")
+		print("")
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'Preprocessing')
 		preprocessing_log = open(dirs['log'] + '/Preprocessing.log','w+')
 		samplesheet = dirs['log'] + '/Variantcalling.samplesheet'
@@ -640,7 +642,7 @@ def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list
 	
 	if 'V' in workflow:
 
-		print "\nVARIANT CALLING"
+		print("\nVARIANT CALLING")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'VariantCalling')
 		variantcalling_log = open(dirs['log'] + '/VariantCalling.log','w+')
@@ -696,7 +698,7 @@ def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list
 		new_samplesheet.close()
 
 	if 'F' in workflow:
-		print "\nFEATURES EXTRACTION"
+		print("\nFEATURES EXTRACTION")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'Featuresextraction')
 		featuresextraction_log = open(dirs['log'] + '/FeaturesExtraction.log','w+')
@@ -718,7 +720,7 @@ def Pipeline_Somatic(workflow,samplesheet,design,panel,dirs,cfg,opts,target_list
 		featuresextraction_log.close()
 	
 	if 'E' in workflow:
-		print "\nANNOTATION"
+		print("\nANNOTATION")
 
 		samples = f.ReadSampleSheet(samplesheet,'Somatic',panel,'Annotation')
 		annotation_log = open(dirs['log'] + '/Annotation.log','w+')

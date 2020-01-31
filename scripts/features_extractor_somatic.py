@@ -845,7 +845,6 @@ def set_features_snp(dictionary):
 
 		try:
 			features.AO_norm_media=nAO/i
-			#print 'media',features.AO_norm_media
 		except:
 			features.AO_norm_media='.'
 		try:
@@ -908,12 +907,11 @@ def set_features_snp(dictionary):
 		nMBQN=0
 		v=[]
 		for bq in vett_MBQ_n:
-			#print variante,vett_MBQ,bq
 			if bq is not '.':
 				try:
 					nMBQN= float(nMBQN)+float(bq)
 				except:
-					print variante,vett_MBQ_n,bq
+					print(variante,vett_MBQ_n,bq)
 				if bq is not '0':
 					v=v+[float(bq)]
 				i=i+1
@@ -994,13 +992,11 @@ def set_features_snp(dictionary):
 
 		i=0
 		v=[]
-		#print vett_STRB_media
 		for strb in vett_STRB_media:
 			if strb is not '.':
 				SB_media=float(SB_media) + float(strb)
 				v=v+[float(strb)]
 				i=i+1
-		#print v,statistics.mediana(v)
 		try:
 			features.STRBIAS_media= SB_media/i
 		except:
@@ -1026,7 +1022,7 @@ def set_features_snp(dictionary):
 		except:
 			features.DPn_t_mediana='.'
 
-		#print vett_delta,"\tdeltamedia",features.delta_media,"\n",vett_delta_perc,"\tdelta_perc_media",features.Delta_perc_media,"\n",vett_AF_tum_media,"\taf_media",features.AF_media,"\n",vett_STRB_media,"\tstrb",features.STRBIAS_media
+		#print(vett_delta,"\tdeltamedia",features.delta_media,"\n",vett_delta_perc,"\tdelta_perc_media",features.Delta_perc_media,"\n",vett_AF_tum_media,"\taf_media",features.AF_media,"\n",vett_STRB_media,"\tstrb",features.STRBIAS_media)
 		dictionary[variante]= varc_array + [features]
 
 def switch(dictionary,ID,index,chrom,pos,ref,alt,filter,info,format,tumor,normal):
@@ -1037,19 +1033,16 @@ def switch(dictionary,ID,index,chrom,pos,ref,alt,filter,info,format,tumor,normal
 		vettore=['','','']
 
 	if index==0:
-		# print 'Mutect'
 		mutect=Mutect()
 		get_info_Mutect(chrom,pos,ref,alt,filter,info,format,tumor,normal,mutect)
 		if Mutect.AF_t != 0.0 or Mutect.AF_t != '.': 
 			vettore[0]=mutect
 	elif index==2:
-		# print 'vardict'
 		vardict=Vardict()
 		get_info_vardict(chrom,pos,ref,alt,filter,info,format,tumor,normal,vardict)
 		if vardict.AF_t != 0.0 or vardict.AF_t != '.': 
 			vettore[2]=vardict
 	elif index==1:
-		# print 'varscan'
 		varscan=Varscan()
 		get_info_varscan(chrom,pos,ref,alt,filter,info,format,tumor,normal,varscan)
 		if varscan.AF_t != 0.0 or varscan.AF_t != '.': 
@@ -1145,14 +1138,12 @@ def max_delta_perc(dictionary):
 			som=features.Delta_perc_Somaticsniper
 		buffer_delta_perc= max([float(mutect),float(varsc),float(vard),float(rad),float(som)])
 		if float(max_delta_perc) < float(buffer_delta_perc):
-			max_delta_perc=buffer_delta_perc
-	#print max_delta_perc		
+			max_delta_perc=buffer_delta_perc	
 
 def control(dictionary):
 	''' esegue un controllo sulle varianti, se non hanno variant caller che le chiama vengono eliminate'''
 	for variante in dictionary.keys():
 		if dictionary[variante][:3] == ['','','']:
-			#print "sto cancellando:",variante
 			del dictionary[variante]
 
 def print_vcf(varianti):
@@ -1182,7 +1173,6 @@ def print_var(dictionary):
 	varianti_tsv.write('CHROM\tPOS\tID\tREF\tALT\t' + '\t'.join(header)+ '\n')
 	
 	for variante in dictionary.keys():
-		#print variante
 		features = dictionary.get(variante)[-1]
 		features_variante_eval=[]
 		for feat in features_variante:
