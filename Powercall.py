@@ -1,82 +1,159 @@
-import argparse
-import subprocess
-from ruffus import *
-import json
-import os
-import textwrap
-import random as rm
-import datetime
-import pysam
-import random as r
-import regex as re
-import Pipeline as pipeline
-import Functions as f
+from PyQt5 import QtCore, QtGui, QtWidgets
+import sheet_compiler as sc
+import analysis_page as ap
 
 
-if __name__ == '__main__':
+class Ui_MainWindow(object):
 
-	parser = argparse.ArgumentParser('This is the Coolest Pipeline you have ever seen')
-	parser.add_argument('-v', '--version', action='version', version='Powercall v3.2.0')
+    def __init__(self):
+        self.setupUi
 
-	parser.add_argument('-c', '--cfg', help="Configuration file in json format")
-	parser.add_argument('-s', '--samplesheet', help="Samplesheet that contains filepaths and samples associated", required=True)
-	parser.add_argument('-d', '--design', help="Design of the NGS experiment [Enrichment,Amplicon].",choices=['Enrichment','Amplicon'])
-	parser.add_argument('-p', '--panel', help="Type of Panel used for the analysis [TrusightCardio (illumina), TrusightCancer (illumina), TrusightOne (illumina), BRCAMASTRDx (MULTIPLICOM), ALPORTMASTR (MULTIPLICOM), HTC (SophiaGenetics), CustomSSQXT (Custom SureSelect QXT Agilent), CustomHPHS (Custom HaloPlex HS Agilent), Custom (Other Custom panel)]",
-		choices="[TrusightCardio, TrusightCancer, TrusightOne, BRCAMASTRDx, ALPORTMASTR, HCS, CustomSSQXT, CustomHPHS, Custom]")
-	parser.add_argument('-a', '--analysis', help="Type of analysis [Germline (Multisample), GermlineSS (Singlesample), SomaticCC (Case-Control), Somatic (only Case)].", choices=['Germline', 'GermlineSS','SomaticCC','Somatic'], default='Germline')
-	parser.add_argument('-id','--run_id', help="Run id [YYYYMMDD_Run_NRUN_PANEL}", required=True)
-	parser.add_argument('-w', '--workdir', help="Working Directory. Use this option if you want to work in a precise directory. Default: '/home/run_id'", default=None)
-	parser.add_argument('--workflow', help="String that indicates which steps the analysis must do: A-> Alignment, R-> AddOrReplaceReadGroups, M-> MarkDuplicates, I-> IndelRealigner, B-> BaseRecalibrator, V-> Variant Calling, F-> Features Extraction, E-> Annotation. Es: --start AMIBVFE indicates all steps (like --start ALL), --start MIBV starts from MarkDuplicates and ends to Variant Calling. Default: ALL ", default='ALL')
-	parser.add_argument('-BP', '--GATKBestPractices', help="GATK Best practices workflow", action='store_true')
+    def open_samplesheet_compiler(self):
+        print('open_samplesheet_compiler')
+        self.samplesheet_editor = sc.Samplesheet_editor()
+        self.samplesheet_editor.show()
 
-	start_time = datetime.datetime.now()
-	success = subprocess.call('clear')
-	
-	global opts
-	opts = parser.parse_args()
+    def open_pipeline_editor(self):
+        print('open_pipeline_editor')
 
-	dirs=dict()
-	
-	if opts.cfg != None:
-		cfg = json.loads((open(opts.cfg).read()).encode('utf8'))
-	else:
-		cfg = json.loads((open(os.path.dirname(os.path.abspath(__file__)) + '/CFG/Powercall.default.cfg.json').read()).encode('utf8'))
-	
-	if opts.workdir != None:
-		work_dir = opts.workdir
-	else:
-		work_dir = opts.run_id
+    def open_tools_settings(self):
+        print('open_tools_settings')
 
-	dirs = f.init_dirs(work_dir,opts)
-	f.makedirs([work_dir, work_dir+'/STORAGE', work_dir+'/OUTPUT', dirs['storage'], dirs['out'], dirs['delete'], dirs['log'], ])
+    def open_panel_editor(self):
+        print('open_panel_editor')
 
-	design,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls = f.panel_check(opts.panel,cfg)
+    def open_analysis_page(self):
+        print('open_analysis_page')
+        self.analysis_page = ap.Analysis_page()
+        self.analysis_page.show()
 
-	if opts.design != None:
-		design = opts.design
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(1185, 937)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
+        MainWindow.setSizePolicy(sizePolicy)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
+        self.centralwidget.setSizePolicy(sizePolicy)
+        self.centralwidget.setObjectName("centralwidget")
+        self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
+        self.gridLayout.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
+        self.gridLayout.setObjectName("gridLayout")
+        self.frame_2 = QtWidgets.QFrame(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.frame_2.sizePolicy().hasHeightForWidth())
+        self.frame_2.setSizePolicy(sizePolicy)
+        self.frame_2.setMaximumSize(QtCore.QSize(1161, 151))
+        self.frame_2.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.frame_2.setAutoFillBackground(False)
+        self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_2.setObjectName("frame_2")
+        self.gridLayout_3 = QtWidgets.QGridLayout(self.frame_2)
+        self.gridLayout_3.setObjectName("gridLayout_3")
+        self.label = QtWidgets.QLabel(self.frame_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy)
+        self.label.setTextFormat(QtCore.Qt.AutoText)
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setObjectName("label")
+        self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        self.gridLayout.addWidget(self.frame_2, 0, 0, 1, 1)
+        self.frame = QtWidgets.QFrame(self.centralwidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
+        self.frame.setSizePolicy(sizePolicy)
+        self.frame.setMaximumSize(QtCore.QSize(1161, 631))
+        self.frame.setObjectName("frame")
+        self.compileSS_Button = QtWidgets.QPushButton(self.frame)
+        self.compileSS_Button.setGeometry(QtCore.QRect(90, 90, 401, 131))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.compileSS_Button.sizePolicy().hasHeightForWidth())
+        self.compileSS_Button.setSizePolicy(sizePolicy)
+        self.compileSS_Button.setMaximumSize(QtCore.QSize(441, 131))
+        self.compileSS_Button.setObjectName("compileSS_Button")
+        self.pipelineEdit_Button = QtWidgets.QPushButton(self.frame)
+        self.pipelineEdit_Button.setGeometry(QtCore.QRect(660, 90, 401, 131))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pipelineEdit_Button.sizePolicy().hasHeightForWidth())
+        self.pipelineEdit_Button.setSizePolicy(sizePolicy)
+        self.pipelineEdit_Button.setMaximumSize(QtCore.QSize(441, 131))
+        self.pipelineEdit_Button.setObjectName("pipelineEdit_Button")
+        self.toolsSet_Button = QtWidgets.QPushButton(self.frame)
+        self.toolsSet_Button.setGeometry(QtCore.QRect(660, 260, 401, 131))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.toolsSet_Button.sizePolicy().hasHeightForWidth())
+        self.toolsSet_Button.setSizePolicy(sizePolicy)
+        self.toolsSet_Button.setMaximumSize(QtCore.QSize(441, 131))
+        self.toolsSet_Button.setObjectName("toolsSet_Button")
+        self.panelInfo_Button = QtWidgets.QPushButton(self.frame)
+        self.panelInfo_Button.setGeometry(QtCore.QRect(90, 260, 401, 131))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.panelInfo_Button.sizePolicy().hasHeightForWidth())
+        self.panelInfo_Button.setSizePolicy(sizePolicy)
+        self.panelInfo_Button.setMaximumSize(QtCore.QSize(441, 131))
+        self.panelInfo_Button.setObjectName("panelInfo_Button")
+        self.start_Analysis_Button = QtWidgets.QPushButton(self.frame)
+        self.start_Analysis_Button.setGeometry(QtCore.QRect(10, 490, 1141, 71))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.start_Analysis_Button.sizePolicy().hasHeightForWidth())
+        self.start_Analysis_Button.setSizePolicy(sizePolicy)
+        self.start_Analysis_Button.setObjectName("start_Analysis_Button")
+        self.gridLayout.addWidget(self.frame, 1, 0, 1, 1)
+        MainWindow.setCentralWidget(self.centralwidget)
 
-	workflow = opts.workflow
-	if workflow == 'ALL':
-		workflow = 'ARMIBVFEC'
+        self.retranslateUi(MainWindow)
+        
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
-	if design == 'Amplicon':
-		workflow=re.sub('MIB','',workflow)
-		workflow=re.sub('M','',workflow)
+        self.setup_buttons()
 
-	if opts.GATKBestPractices:
-		workflow=re.sub('I','',workflow)
+    def setup_buttons(self):
+        self.compileSS_Button.clicked.connect(self.open_samplesheet_compiler)
+        self.pipelineEdit_Button.clicked.connect(self.open_pipeline_editor)
+        self.toolsSet_Button.clicked.connect(self.open_tools_settings)
+        self.panelInfo_Button.clicked.connect(self.open_panel_editor)
+        self.start_Analysis_Button.clicked.connect(self.open_analysis_page)
 
-	if opts.analysis == 'Germline':
-		pipeline.Pipeline_Germline_Multisample(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls)
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.label.setText(_translate("MainWindow", "PowerCall V2.0"))
+        self.compileSS_Button.setText(_translate("MainWindow", "COMPILE SAMPLE SHEET "))
+        self.pipelineEdit_Button.setText(_translate("MainWindow", "ADD or EDIT PIPELINE"))
+        self.toolsSet_Button.setText(_translate("MainWindow", "TOOLS SETTINGS"))
+        self.panelInfo_Button.setText(_translate("MainWindow", "ADD or EDIT GENE PANEL INFO"))
+        self.start_Analysis_Button.setText(_translate("MainWindow", "START ANALYSIS"))
 
-	if opts.analysis == 'GermlineSS':
-		pipeline.Pipeline_Germline_Singlesample(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls)
 
-	elif opts.analysis == 'SomaticCC':
-		pipeline.Pipeline_Somatic_Case_Control(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls)
-
-	elif opts.analysis == 'Somatic':
-		pipeline.Pipeline_Somatic(workflow,opts.samplesheet,design,opts.panel,dirs,cfg,opts,target_list,target_bed,transcripts_list,cnv_target_list,cnv_target_bed,cnv_ref_ploidy,cnv_ref_calls)
-
-	elapsed_time = divmod((datetime.datetime.now() - start_time).total_seconds(),60)
-	print("\nTime elapsed: %d min, %d sec" % elapsed_time)
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
